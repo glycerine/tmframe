@@ -209,7 +209,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        any alignment boundary. It should be the exact length
        of the payload in bytes.
 
-       The next messages primary word will commence after the
+       The next message's primary word will commence after the
        UCOUNT bytes that follow the UDE.
 
   UTYPE => is a 20-bit unsigned integer giving the type of the
