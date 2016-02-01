@@ -41,7 +41,7 @@ a) primary word only
 
 ~~~
 +---------------------------------------------------------------+
-|                     primary word (64-bits)                    |
+|      primary word (64-bits) with PTI={0, 1, 4, 5, or 6}       |
 +---------------------------------------------------------------+
 ~~~
 
@@ -49,7 +49,7 @@ b) primary word and UDE word only:
 
 ~~~
 +---------------------------------------------------------------+
-|                     primary word (64-bits)                    |
+|                primary word (64-bits) with PTI=7              |
 +---------------------------------------------------------------+
 |            User-defined-encoding (UDE) descriptor             |
 +---------------------------------------------------------------+
@@ -59,7 +59,7 @@ c) primary word + UDE word + variable byte-length message:
 
 ~~~
 +---------------------------------------------------------------+
-|                     primary word (64-bits)                    |
+|                primary word (64-bits) with PTI=7              |
 +---------------------------------------------------------------+
 |            User-defined-encoding (UDE) descriptor             |
 +---------------------------------------------------------------+
@@ -67,6 +67,32 @@ c) primary word + UDE word + variable byte-length message:
 |                message here                          ----------
 |     (the UDE supplies the exact byte-count)          |
 +-------------------------------------------------------
+~~~
+
+There are also two special payload types that are not UDE based,
+as they handle the common case of attaching one or two
+float64 values to a timestamp.
+
+d) primary word + one float64
+
+~~~
++---------------------------------------------------------------+
+|                primary word (64-bits) with PTI=2              |
++---------------------------------------------------------------+
+|                     V0 (float64)                              |
++---------------------------------------------------------------+
+~~~
+
+e) primary word + two float64
+
+~~~
++---------------------------------------------------------------+
+|                primary word (64-bits) with PTI=3              |
++---------------------------------------------------------------+
+|                     V0 (float64)                              |
++---------------------------------------------------------------+
+|                     V1 (float64)                              |
++---------------------------------------------------------------+
 ~~~
 
 
