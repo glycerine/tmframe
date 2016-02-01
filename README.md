@@ -216,8 +216,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        The one pre-defined user EVTNUM value is:
 
        -1 => an error message string in utf8 follows; it is
-             of length UCOUNT, and always has a terminating
-             '\0' byte included in the UCOUNT.
+             of length UCOUNT, and is not zero terminated.
 
        Any custom user-defined types added by the user will
        therefore start at EVTNUM = -2. The last usable EVTNUM is
