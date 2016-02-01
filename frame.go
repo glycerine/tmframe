@@ -67,8 +67,11 @@ func init() {
 	MyNaN = 0.0 / zero
 }
 
-// Marshal serialized the Frame into bytes.
-func (f *Frame) Marshal(by []byte) ([]byte, error) {
+// Marshal serialized the Frame into bytes. We'll
+// reuse the space pointed to by buf if there is
+// sufficient space in it. We return the bytes
+// that we wrote, plus any error.
+func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	n := 8
 	switch f.Pti {
 	case PtiZero:
@@ -90,7 +93,12 @@ func (f *Frame) Marshal(by []byte) ([]byte, error) {
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
 	}
-	m := make([]byte, n)
+	var m []byte
+	if len(buf) >= n {
+		m = buf[:n]
+	} else {
+		m = make([]byte, n)
+	}
 	binary.LittleEndian.PutUint64(m[:8], uint64(f.Prim))
 	if n == 8 {
 		return m, nil
