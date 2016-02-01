@@ -54,7 +54,7 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
     6 => NA: not-available, an unintentionally missing value.
          In statistics, this indicates that *any* value could
          have been the correct payload here, but that the
-         observation was not recorded. a.ka. "Missing data". Written as NA.
+         observation was not recorded. a.k.a. "Missing data". Written as NA.
     7 => (invalid and forbidden; reserved for future extension)
 
 ~~~
