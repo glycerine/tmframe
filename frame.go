@@ -7,6 +7,39 @@ import (
 	"time"
 )
 
+// PTI is the Payload Type Indicator. It is the low 3-bits
+// of the Primary word in a TMFRAME message.
+type PTI byte
+
+const (
+	PtiZero       PTI = 0
+	PtiOne        PTI = 1
+	PtiOneFloat64 PTI = 2
+	PtiTwoFloat64 PTI = 3
+	PtiNull       PTI = 4
+	PtiNA         PTI = 5
+	PtiNaN        PTI = 6
+	PtiUDE        PTI = 7
+)
+
+// The Evtnum is the message type when pti = PtiUDE and
+// UDE descriptors are in use for describing TMFRAME
+// message longer than just the one Primary word.
+type Evtnum int32
+
+const (
+	Error   Evtnum = -1
+	Zero    Evtnum = 0
+	SysErr  Evtnum = 1
+	Header  Evtnum = 2
+	Msgpack Evtnum = 3
+	Binc    Evtnum = 4
+	Capnp   Evtnum = 5
+	Zygo    Evtnum = 6
+	Utf8    Evtnum = 7
+)
+
+// Frame holds a fully parsed TMFRAME message.
 type Frame struct {
 	Prim int64 // the primary word
 
@@ -27,23 +60,33 @@ type Frame struct {
 	Data []byte // the variable length payload after the UDE
 }
 
+var MyNaN float64
+var zero = 0.0
+
+func init() {
+	MyNaN = 0.0 / zero
+}
+
+// Marshal serialized the Frame into bytes.
 func (f *Frame) Marshal(by []byte) ([]byte, error) {
 	n := 8
 	switch f.Pti {
 	case PtiZero:
 		n = 8
+	case PtiOne:
+		n = 8
 	case PtiOneFloat64:
 		n = 16
 	case PtiTwoFloat64:
 		n = 24
-	case PtiNaN:
-		n = 8
-	case PtiUDE:
-		n = 16 + len(f.Data)
 	case PtiNull:
 		n = 8
 	case PtiNA:
 		n = 8
+	case PtiNaN:
+		n = 8
+	case PtiUDE:
+		n = 16 + len(f.Data)
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
 	}
@@ -71,6 +114,8 @@ func (f *Frame) Marshal(by []byte) ([]byte, error) {
 
 var TooShortErr = fmt.Errorf("data supplied is too short to represent a TMFRAME frame")
 
+// Unmarshal overwrites f with the restored value of the TMFRAME found
+// in the by []byte data.
 func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	// zero it all
 	*f = Frame{}
@@ -89,6 +134,9 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	switch pti {
 	case PtiZero:
 		return by[8:], nil
+	case PtiOne:
+		f.V0 = 1.0
+		return by[8:], nil
 	case PtiOneFloat64:
 		if n < 16 {
 			return by, TooShortErr
@@ -102,7 +150,12 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		f.V0 = math.Float64frombits(binary.LittleEndian.Uint64(by[8:16]))
 		f.V1 = math.Float64frombits(binary.LittleEndian.Uint64(by[16:24]))
 		return by[24:], nil
+	case PtiNull:
+		return by[8:], nil
+	case PtiNA:
+		return by[8:], nil
 	case PtiNaN:
+		f.V0 = MyNaN
 		return by[8:], nil
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
@@ -120,10 +173,6 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		}
 		f.Data = by[16 : 16+ucount]
 		return by[16+ucount:], nil
-	case PtiNull:
-		return by[8:], nil
-	case PtiNA:
-		return by[8:], nil
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
 
@@ -133,33 +182,8 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 
 const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
-type PTI byte
-
-const (
-	PtiZero       PTI = 0
-	PtiOne        PTI = 1
-	PtiOneFloat64 PTI = 2
-	PtiTwoFloat64 PTI = 3
-	PtiNull       PTI = 4
-	PtiNA         PTI = 5
-	PtiNaN        PTI = 6
-	PtiUDE        PTI = 7
-)
-
-type Evtnum int32
-
-const (
-	Error   Evtnum = -1
-	Zero    Evtnum = 0
-	SysErr  Evtnum = 1
-	Header  Evtnum = 2
-	Msgpack Evtnum = 3
-	Binc    Evtnum = 4
-	Capnp   Evtnum = 5
-	Zygo    Evtnum = 6
-	Utf8    Evtnum = 7
-)
-
+// NewFrame creates a new TMFRAME message, ready to have Marshal called on
+// for serialization into bytes.
 func NewFrame(tm time.Time, pti PTI, evtnum Evtnum, v0 float64, v1 float64, data []byte) *Frame {
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
