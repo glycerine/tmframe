@@ -16,6 +16,59 @@ float64 are needed for the timepoint's value are supported
 with exactly two words (two 64-bit words; one for the
 timestamp and one for the float64 payload).
 
+# overview of the format
+
+A TMFRAME message always starts with a primary word.
+
+Depending on the content of the low 3 bits of the primary word,
+the primary word may be the only bytes in the message.
+However, there may also be additional bytes following the
+primary word that complete the message.
+
+TMFRAME messages will be 8 bytes (primary word only);
+16 bytes long (primary word + UDE word only); or
+greater than 16 bytes long.
+
+Frequently a TMFRAME message will consist of one primary word, one UDE word, and
+a variable length payload. The primary word and UDE
+word are always 64-bits. The payload can be up to 2^43 bytes
+in length.
+
+We illustrate the possible TMFRAME message lengths here:
+
+a) primary word only
+
+~~~
++---------------------------------------------------------------+
+|                     primary word (64-bits)                    |
++---------------------------------------------------------------+
+~~~
+
+b) primary word and UDE word only:
+
+~~~
++---------------------------------------------------------------+
+|                     primary word (64-bits)                    |
++---------------------------------------------------------------+
+|            User-defined-encoding (UDE) descriptor             |
++---------------------------------------------------------------+
+~~~
+
+c) primary word + UDE word + variable byte-length message:
+
+~~~
++---------------------------------------------------------------+
+|                     primary word (64-bits)                    |
++---------------------------------------------------------------+
+|            User-defined-encoding (UDE) descriptor             |
++---------------------------------------------------------------+
+|               variable length                                 |
+|                message here                          ----------
+|     (the UDE supplies the exact byte-count)          |
++-------------------------------------------------------
+~~~
+
+
 # 1. number encoding rules
 
 Integers and floating point numbers are used in the
@@ -30,11 +83,6 @@ protocol that follows, so we fix our definitions of these.
 # 2. primary word encoding
 
 A TMFRAME message always starts with a primary word.
-
-Depending on the content of the low 3 bits of the primary word,
-the primary word may be the only bytes in the message.
-However, there may also be additional bytes following the
-primary word that complete the message.
 
 ~~~
 
@@ -97,10 +145,14 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        follow as a part of this message. Zero is allowed as a
        value in C, and is useful when the type information in D
        suffices to convey the event. Mask off the high 21-bits
-       of the UDE to erase the UTYPE before using the count
-       of byte count in UCOUNT. The payload starts immediately
-       after the UDE, and can be up to 8TB long (2^43 bytes).
+       of the UDE to erase the UTYPE and Q-BIT before using the count
+       of bytes found in UCOUNT. The payload starts immediately
+       after the UDE word, and can be up to 8TB long (2^43 bytes).
        Shorter payloads are recommended whenever possible.
+
+       There is no requirement that UCOUNT be padded to
+       any alignment boundary. It should be the exact length
+       of the payload in bytes.
 
   UTYPE => is a 20-bit unsigned integer giving the type of the
        message to follow. 
