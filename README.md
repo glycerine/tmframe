@@ -216,7 +216,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        The one pre-defined user EVTNUM value is:
 
        -1 => an error message string in utf8 follows; it is
-             of length UCOUNT, and is not zero terminated.
+             of length UCOUNT, and the count includes a
+             zero termination byte.
 
        Any custom user-defined types added by the user will
        therefore start at EVTNUM = -2. The last usable EVTNUM is
@@ -266,12 +267,13 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        12 => a sequence of S-expressions (code or data) in zygomys
             parse format follows. [note 1]
  
-       13 => the payload is a UTF-8 encoded string. There is no
-             terminating zero byte, so UCOUNT is exactly the
-             string's byte count.
+       13 => the payload is a UTF-8 encoded string. The wire
+             format will include a zero termination byte after
+             the string to help with C bindings, and
+             the UCOUNT will reflect that include zero byte.
 
-       14 => the payload is a JSON UTF-8 string. There is no
-             terminating zero byte.
+       14 => the payload is a JSON UTF-8 string. The UCOUNT
+             will include an additional terminating zero byte.
 ~~~
 
 After any variable length payload that follows the UDE word, the

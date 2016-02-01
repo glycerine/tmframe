@@ -19,8 +19,8 @@ func TestParsingTMFRAME(t *testing.T) {
 		low3 := nano % 8
 
 		cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
-		cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
-		cv.So(frame.Ulen, cv.ShouldEqual, len(msg))
+		cv.So(string(frame.Data), cv.ShouldEqual, string(msg)+string(0))
+		cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1)
 		cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data))
 		cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
 		cv.So(frame.Prim, cv.ShouldEqual, frame.Tm|int64(pti))
@@ -49,8 +49,8 @@ func TestParsingTMFRAME(t *testing.T) {
 
 			cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
 			if ev <= -1 || ev >= 7 {
-				cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
-				cv.So(frame.Ulen, cv.ShouldEqual, len(msg))
+				cv.So(string(frame.Data), cv.ShouldEqual, string(msg)+string(0))
+				cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1) // +1 for the zero terminating byte
 				cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data))
 				cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
 			} else {

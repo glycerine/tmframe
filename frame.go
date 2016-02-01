@@ -207,7 +207,10 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
 // NewFrame creates a new TMFRAME message, ready to have Marshal called on
-// for serialization into bytes.
+// for serialization into bytes. It will make an internal copy of data if the evtnum
+// is an event that uses a UDE word. It will zero-terminate that data to
+// make interop with C bindings easier; hence the UCOUNT on the wire will
+// always include in its count this terminating zero byte.
 func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *Frame {
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
@@ -225,7 +228,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 	Q("post shift en = %b", en)
 	Q("len(data) = %v", len(data))
 	Q("len(data) = %b", len(data))
-	ude := uint64(len(data)) | en
+	ude := uint64(len(data)+1) | en // the +1 is so we zero-terminate strings -- for C bindings
 	Q("ude = %b", ude)
 
 	var useData []byte
@@ -250,7 +253,9 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 	default:
 		// includes case EvUDE and EvErr
 		pti = PtiUDE
-		useData = data
+		// zero terminate any data we have
+		useData = make([]byte, len(data)+1)
+		copy(useData, data)
 		myUDE = ude
 	}
 
