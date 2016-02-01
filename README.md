@@ -168,9 +168,11 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 
        There are two pre-defined user-defined types:
 
-       0 => zero value payload.
+       0 => zero value payload. UCOUNT must also be 0.
        1 => error message string in utf8 follows.
 
+       Any custom user-defined types added by the user will
+       therefore start at 2.
 
        System defined UTYPE values as of this writing are:
 
