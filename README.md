@@ -247,11 +247,11 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
                     following float64 value.
                3 => EvTwo64, the payload will be the float64
                     and the int64 that follow.
-	       4 => EvNull, payload is defined as the NULL value.
-	       5 => EvNA, payload is defined as NA, or Not-Available,
+               4 => EvNull, payload is defined as the NULL value.
+               5 => EvNA, payload is defined as NA, or Not-Available,
                     denoting missing data.
-	       6 => EvNaN, payload denotes IEEE-754 Not-a-Number, NaN.
-	       7 => EvUDE, payload is describe by the UDE word that
+               6 => EvNaN, payload denotes IEEE-754 Not-a-Number, NaN.
+               7 => EvUDE, payload is describe by the UDE word that
                     follows.
 
        8 => a TMFRAME-HEADER value follows, giving time-series
