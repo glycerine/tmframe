@@ -185,6 +185,15 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        
 ~~~
 
+This concludes the specification of the TMFRAME format.
+
+# conclusion
+
+TMFRAME is a very simple yet flexible format for time series data. It allows
+very compact and dense information capture, while providing the
+ability to convey and attach full event informtion to each timepoint as
+required.
+
 ### notes
 
 [1] For zygomys parse format, see [https://github.com/glycerine/zygomys](https://github.com/glycerine/zygomys)
