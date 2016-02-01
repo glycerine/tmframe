@@ -13,7 +13,8 @@ resolution is limited to 10 nanoseconds). However the same
 format can be accompanied by much longer additional
 event data if need be. Common situations where a single
 float64 are needed for the timepoint's value are supported
-with exactly two words (two 64-bit words).
+with exactly two words (two 64-bit words; one for the
+timestamp and one for the float64 payload).
 
 # 1. primitive encoding rules;
 
