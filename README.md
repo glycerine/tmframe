@@ -155,6 +155,9 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        any alignment boundary. It should be the exact length
        of the payload in bytes.
 
+       The next messages primary word will commence after the
+       UCOUNT bytes that follow the UDE.
+
   UTYPE => is a 20-bit unsigned integer giving the type of the
        message to follow. 
        
@@ -187,6 +190,9 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
             parse format follows. [note 1]
 
 ~~~
+
+After any variable length payload that follows the UDE word, the
+next TMFRAME message will commence with its primary word.
 
 This concludes the specification of the TMFRAME format.
 
