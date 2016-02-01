@@ -236,10 +236,11 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
                appear in the EVTNUM field on the wire. However
                we defined them here to make the API
                easier to use--when NewFrame() is called
-               with Evnum in this range, the PTI field is automatically
-               set accordingly. To provide documentation for
-               the NewFrame() calls evtnum formal parameter,
-               we will repeat the encoding here:
+               with evtnum in this range, the PTI field is automatically
+               set accordingly, and the implicit compression
+               of the primary word-only messages is recognized.
+               To provide documentation for the NewFrame() calls
+               evtnum formal parameter, we will restate the encoding here:
 
                1 => EvOne, the payload is defined to be the value 1.
                2 => EvOneFloat64, the payload will be the
