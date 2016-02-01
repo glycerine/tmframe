@@ -107,17 +107,44 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
     0 => a zero value is indicated for this timestamp.
          (the zero value can also be encoded, albeit
          less efficiently, by a UDE word with bits all 0).
-    1 => exactly one 64-bit float64 payload value follows.
-    2 => exactly two 64-bit float64 payload values follow.
-    3 => time-stamp only, no other value follows. (no UDE
-          follows; the next word will be another primary word)
-    4 => user-defined-encoding (UDE) descriptor word follows.
-    5 => NULL: the null-value, a known and intentionally null value. Written as NULL.
-    6 => NA: not-available, an unintentionally missing value.
+         
+         Use the zero-value for time-stamp only time-series.
+
+         The primary word is the only word in this message.
+         The next word will be the primary word of the next
+         message on the wire.
+
+         By convention, the 0 value can indicate the
+         payload false for boolean series.
+
+    1 => value of 1 (or by convention, a value of true for boolean series).
+
+         The primary word is the only word in this message.
+
+    2 => exactly one 64-bit float64 payload value follows.
+         Nmemonic: The total number of 64-bit words in the message is 2.
+         
+    3 => exactly two 64-bit float64 payload values follow.
+         Nmemonic: The total number of 64-bit words in the message is 3.
+         
+    4 => NULL: the null-value, a known and intentionally null value. Written as NULL.
+
+         The primary word is the only word in this message.
+
+    5 => NA: not-available, an unintentionally missing value.
          In statistics, this indicates that *any* value could
          have been the correct payload here, but that the
          observation was not recorded. a.k.a. "Missing data". Written as NA.
-    7 => (invalid and forbidden; reserved for future extension)
+
+         The primary word is the only word in this message.
+
+    6 => NaN: not-a-number, IEEE 754 floating point NaN value.
+         Obtained when dividing zero by zero, for example. math.IsNaN()
+         detects these.
+
+         The primary word is the only word in this message.
+
+    7 => user-defined-encoding (UDE) descriptor word follows.
 
 ~~~
 
@@ -144,7 +171,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 
   UCOUNT => is a 43-bit unsigned integer number of bytes that
        follow as a part of this message. Zero is allowed as a
-       value in C, and is useful when the type information in D
+       value in UCOUNT, and is useful when the type information in UTYPE
        suffices to convey the event. Mask off the high 21-bits
        of the UDE to erase the UTYPE and Q-BIT before using the count
        of bytes found in UCOUNT. The payload starts immediately
@@ -161,12 +188,12 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
   UTYPE => is a 20-bit unsigned integer giving the type of the
        message to follow. 
        
-       Certain D values are pre-defined event-type descriptors,
+       Certain UTYPE values are pre-defined event-type descriptors,
        defined by this spec, and others are reserved for
        user defined extensions. The Q-BIT tells you which
        namespace is in use.
 
-       There are two pre-defined user-defined types:
+       Also there are two pre-defined user-defined types:
 
        0 => zero value payload. UCOUNT must also be 0.
        1 => error message string in utf8 follows.

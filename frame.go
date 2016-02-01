@@ -36,7 +36,7 @@ func (f *Frame) Marshal(by []byte) ([]byte, error) {
 		n = 16
 	case PtiTwoFloat64:
 		n = 24
-	case PtiTmOnly:
+	case PtiNaN:
 		n = 8
 	case PtiUDE:
 		n = 16 + len(f.Data)
@@ -102,7 +102,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		f.V0 = math.Float64frombits(binary.LittleEndian.Uint64(by[8:16]))
 		f.V1 = math.Float64frombits(binary.LittleEndian.Uint64(by[16:24]))
 		return by[24:], nil
-	case PtiTmOnly:
+	case PtiNaN:
 		return by[8:], nil
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
@@ -137,12 +137,13 @@ type PTI byte
 
 const (
 	PtiZero       PTI = 0
-	PtiOneFloat64 PTI = 1
-	PtiTwoFloat64 PTI = 2
-	PtiTmOnly     PTI = 3
-	PtiUDE        PTI = 4
-	PtiNull       PTI = 5
-	PtiNA         PTI = 6
+	PtiOne        PTI = 1
+	PtiOneFloat64 PTI = 2
+	PtiTwoFloat64 PTI = 3
+	PtiNull       PTI = 4
+	PtiNA         PTI = 5
+	PtiNaN        PTI = 6
+	PtiUDE        PTI = 7
 )
 
 type Utype int32
