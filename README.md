@@ -266,9 +266,12 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        12 => a sequence of S-expressions (code or data) in zygomys
             parse format follows. [note 1]
  
-       13 => the payload is a UTF-8 encoded string.
+       13 => the payload is a UTF-8 encoded string. There is no
+             terminating zero byte, so UCOUNT is exactly the
+             string's byte count.
 
-       14 => the payload is a JSON UTF-8 string.
+       14 => the payload is a JSON UTF-8 string. There is no
+             terminating zero byte.
 ~~~
 
 After any variable length payload that follows the UDE word, the
