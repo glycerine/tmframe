@@ -35,13 +35,13 @@ func TestParsingTMFRAME(t *testing.T) {
 
 	})
 
-	cv.Convey("We should be able to marshal and unmarshal User typed messages (q-bit == 1; type numbers < 0)", t, func() {
+	cv.Convey("We should be able to marshal and unmarshal User typed messages (q-bit == 1; with evnnum < 0)", t, func() {
 
 		tm := time.Now()
 		msg := []byte("fake msg")
 		pti := PtiUDE
-		utyp := Evtnum(-34)
-		frame := NewFrame(tm, pti, utyp, 0, 0, msg)
+		evnum := Evtnum(-34)
+		frame := NewFrame(tm, pti, evnum, 0, 0, msg)
 
 		nano := tm.UnixNano()
 		low3 := nano % 8
@@ -60,7 +60,9 @@ func TestParsingTMFRAME(t *testing.T) {
 		var frame2 Frame
 		frame2.Unmarshal(by)
 		cv.So(&frame2, cv.ShouldResemble, frame)
-
+		cv.So(frame2.Evnum, cv.ShouldEqual, -34)
+		Q("frame2.Tm = %v", time.Unix(0, frame2.Tm))
+		Q("tm = %v", tm)
 	})
 
 }
