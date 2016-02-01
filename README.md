@@ -292,6 +292,10 @@ very compact and dense information capture, while providing the
 ability to convey and attach full event information to each timepoint as
 required.
 
+### implementation
+
+There is a basic Go implementation in this repo. [Docs here](https://godoc.org/github.com/glycerine/tmframe).
+
 ### notes
 
 [1] For zygomys parse format, see [https://github.com/glycerine/zygomys](https://github.com/glycerine/zygomys)
