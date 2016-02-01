@@ -25,7 +25,7 @@ the primary word may be the only bytes in the message.
 However, there may also be additional bytes following the
 primary word that complete the message.
 
-TMFRAME messages will be 8 bytes (primary word only);
+TMFRAME messages will either be 8 bytes (primary word only);
 16 bytes long (primary word + UDE word only); or
 greater than 16 bytes long.
 
