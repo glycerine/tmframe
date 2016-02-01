@@ -16,11 +16,16 @@ float64 are needed for the timepoint's value are supported
 with exactly two words (two 64-bit words; one for the
 timestamp and one for the float64 payload).
 
-# 1. primitive encoding rules;
+# 1. number encoding rules
+
+Integers and floating point numbers are used in the
+protocol that follows, so we fix our definitions of these.
 
  * Integers: are encoded in little-endian format. Signed integers
-    use two’s complement.
- * float64 or Floating-point numbers: Encoded in little-endian IEEE-754 format.
+    use two’s complement. Integers are signed unless otherwise
+    noted.
+ * float64, also known as 64-bit floating-point numbers: Encoded
+   in little-endian IEEE-754 format.
 
 # 2. primary word encoding
 
