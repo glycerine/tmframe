@@ -205,6 +205,11 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        The next message's primary word will commence after the
        UCOUNT bytes that follow the UDE.
 
+       If UCOUNT is > 0, then the payload of bytes must
+       include a 0 byte as its last value. This assists
+       in languages bindings (e.g. C) where strings need a
+       terminating zero byte.
+
   EVTNUM => a 21-bit signed two's-compliment integer capable
        of expressing values in the range [-(2^20), (2^20)-1].
 
@@ -267,13 +272,16 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        12 => a sequence of S-expressions (code or data) in zygomys
             parse format follows. [note 1]
  
-       13 => the payload is a UTF-8 encoded string. The wire
+       13 => the payload is a UTF-8 encoded string. As noted
+             above in the UCOUNT section, the wire
              format will include a zero termination byte after
              the string to help with C bindings, and
-             the UCOUNT will reflect that include zero byte.
+             the UCOUNT will reflect that inclusion if the
+             string length itself is greater than zero.
 
        14 => the payload is a JSON UTF-8 string. The UCOUNT
-             will include an additional terminating zero byte.
+             will include an additional terminating zero byte
+             if the string has length > 0.
 ~~~
 
 After any variable length payload that follows the UDE word, the
