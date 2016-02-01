@@ -163,11 +163,12 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
            either by this specification, or a later version of this
            specification.
       1 => a Q-BIT of 1 indicates a user-defined UTYPE.
-           Users should feel free to define their own types
-           within this range. Notice that testing whether the
+           If needed, Users should feel free to define their
+           own type extensions with Q-BIT set to 1 and
+           with UTYPE between [2, 2^20]. Notice that testing whether the
            entire UBE (treated as a signed 64-bit int) is < 0
            suffices to determine if a user-defined UTYPE is in
-           use.
+           use, since the high bit determines the sign.
 
   UCOUNT => is a 43-bit unsigned integer number of bytes that
        follow as a part of this message. Zero is allowed as a
@@ -199,7 +200,9 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        1 => error message string in utf8 follows.
 
        Any custom user-defined types added by the user will
-       therefore start at 2.
+       therefore start at 2. The largest usable UTYPE is
+       the 2^20 value; so over one million enumerated user
+       defined event types are supported.
 
        System defined UTYPE values as of this writing are:
 
