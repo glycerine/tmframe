@@ -3,6 +3,14 @@
 TMFRAME, pronounced "time frame", is a simple and efficient
 binary standard for encoding time series data.
 
+Starting with a 64-bit nanoseconds-since the Unix epoch
+timestamp, the idea here is that the low 3-bits are really
+just random noise, given that our clock calibrations just
+aren't that accurate.
+
+So we replace those 3 bits with a useful data
+payload to get a highly compressed timeseries format.
+
 specification
 =============
 
