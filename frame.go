@@ -21,7 +21,7 @@ type Frame struct {
 
 	// break down the Ude:
 	IsUser bool // Q-BIT
-	Utyp   Utype
+	Evnum  Evtnum
 	Ulen   int64
 
 	Data []byte // the variable length payload after the UDE
@@ -107,11 +107,11 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
 		f.Ude = int64(ude)
-		f.Utyp = Utype(ude >> 43)
+		f.Evnum = Evtnum(ude >> 43)
 		if f.Ude < 0 {
 			Q("setting f.IsUser")
 			f.IsUser = true
-			f.Utyp -= (1 << 21)
+			f.Evnum -= (1 << 21)
 		}
 		ucount := ude & KeepLow43Bits
 		f.Ulen = int64(ucount)
@@ -146,36 +146,37 @@ const (
 	PtiUDE        PTI = 7
 )
 
-type Utype int32
+type Evtnum int32
 
 const (
-	Zero    Utype = 0
-	Error   Utype = 1
-	Header  Utype = 2
-	Msgpack Utype = 3
-	Binc    Utype = 4
-	Capnp   Utype = 5
-	Zygo    Utype = 6
-	Utf8    Utype = 7
+	Error   Evtnum = -1
+	Zero    Evtnum = 0
+	SysErr  Evtnum = 1
+	Header  Evtnum = 2
+	Msgpack Evtnum = 3
+	Binc    Evtnum = 4
+	Capnp   Evtnum = 5
+	Zygo    Evtnum = 6
+	Utf8    Evtnum = 7
 )
 
-func NewFrame(tm time.Time, pti PTI, utyp Utype, v0 float64, v1 float64, data []byte) *Frame {
+func NewFrame(tm time.Time, pti PTI, evtnum Evtnum, v0 float64, v1 float64, data []byte) *Frame {
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
 
-	ut := uint64(utyp % (1 << 20))
-	Q("ut = %v", ut)
-	isUser := utyp < 0
+	en := uint64(evtnum % (1 << 20))
+	Q("en = %v", en)
+	isUser := evtnum < 0
 	Q("isUser = %v", isUser)
 	if isUser {
-		ut |= (1 << 21)
+		en |= (1 << 21)
 	}
-	Q("pre shift ut = %b", ut)
-	ut = ut << 43
-	Q("post shift ut = %b", ut)
+	Q("pre shift en = %b", en)
+	en = en << 43
+	Q("post shift en = %b", en)
 	Q("len(data) = %v", len(data))
 	Q("len(data) = %b", len(data))
-	ude := uint64(len(data)) | ut
+	ude := uint64(len(data)) | en
 	Q("ude = %b", ude)
 
 	f := &Frame{
@@ -185,7 +186,7 @@ func NewFrame(tm time.Time, pti PTI, utyp Utype, v0 float64, v1 float64, data []
 		Tm:     mod,
 		Pti:    pti,
 		Ude:    int64(ude),
-		Utyp:   utyp,
+		Evnum:  evtnum,
 		IsUser: isUser,
 		Ulen:   int64(len(data)),
 		Data:   data,

@@ -182,19 +182,29 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 |Q-BIT|    UTYPE    |                UCOUNT                     |
 +---------------------------------------------------------------+
 
+or equivalently:
+
+msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
++---------------------------------------------------------------+
+| EVTNUM (21-bits)  |                UCOUNT (43-bits)           |
++---------------------------------------------------------------+
+
+
   Q-BIT => a single bit indicating in the UTYPE is a
       system defined type, or a user-defined type.
 
       0 => a Q-BIT of zero indicates the UTYPE is system-defined;
            either by this specification, or a later version of this
-           specification.
+           specification. The corresponding EVTNUM event
+           numbers will be zero or positive.
       1 => a Q-BIT of 1 indicates a user-defined UTYPE.
            If needed, Users should feel free to define their
            own type extensions with Q-BIT set to 1 and
-           with UTYPE between [2, 2^20]. Notice that testing whether the
-           entire UBE (treated as a signed 64-bit int) is < 0
-           suffices to determine if a user-defined UTYPE is in
-           use, since the high bit determines the sign.
+           with UTYPE between [2, 2^20]. The corresponding
+           EVTNUM even numbers will be negative, as
+           EVTNUM takes its sign from the Q-BIT and its
+           absolute value from the UTYPE, using the two's
+           compliment encoding for integers.
 
   UCOUNT => is a 43-bit unsigned integer number of bytes that
        follow as a part of this message. Zero is allowed as a
@@ -220,17 +230,24 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        user defined extensions. The Q-BIT tells you which
        namespace is in use.
 
-       Also there are two pre-defined user-defined types:
+  EVTNUM => this is the concatenation of Q-BIT and UTYPE.
 
-       0 => zero value payload. UCOUNT must also be 0.
-       1 => error message string in utf8 follows.
+       Putting the Q-BIT and UTYPE together, we get a
+       21-bit signed integer capable of expressing
+       values in the range [-(2^20), (2^20)-1]. We will refer
+       to 21-bit signed integer as the EVTNUM value.
+
+       There is one pre-defined user-defined event number.
+       The one pre-defined user EVTNUM value is:
+
+       -1 => an error message string in utf8 follows.
 
        Any custom user-defined types added by the user will
-       therefore start at 2. The largest usable UTYPE is
-       the 2^20 value; so over one million enumerated user
-       defined event types are supported.
+       therefore start at EVTNUM = -2. The last usable EVTNUM is
+       the -1 * (2^20) value; so over one million user
+       defined event types are available.
 
-       System defined UTYPE values as of this writing are:
+       System defined EVTNUM values as of this writing are:
 
        0 => this is also a zero value payload. The corresponding
             UCOUNT must also be 0. There are no other words

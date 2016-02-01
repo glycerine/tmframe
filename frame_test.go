@@ -40,7 +40,7 @@ func TestParsingTMFRAME(t *testing.T) {
 		tm := time.Now()
 		msg := []byte("fake msg")
 		pti := PtiUDE
-		utyp := Utype(-34)
+		utyp := Evtnum(-34)
 		frame := NewFrame(tm, pti, utyp, 0, 0, msg)
 
 		nano := tm.UnixNano()
