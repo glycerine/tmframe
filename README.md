@@ -191,7 +191,7 @@ This concludes the specification of the TMFRAME format.
 
 TMFRAME is a very simple yet flexible format for time series data. It allows
 very compact and dense information capture, while providing the
-ability to convey and attach full event informtion to each timepoint as
+ability to convey and attach full event information to each timepoint as
 required.
 
 ### notes
