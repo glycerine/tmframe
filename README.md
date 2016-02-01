@@ -90,7 +90,7 @@ d) primary word + one float64
 +---------------------------------------------------------------+
 ~~~
 
-e) primary word + two float64
+e) primary word + one float64 + one int64
 
 ~~~
 +---------------------------------------------------------------+
@@ -98,7 +98,7 @@ e) primary word + two float64
 +---------------------------------------------------------------+
 |                     V0 (float64)                              |
 +---------------------------------------------------------------+
-|                     V1 (float64)                              |
+|                     V1 (int64)                                |
 +---------------------------------------------------------------+
 ~~~
 
@@ -171,7 +171,7 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
 
          The primary word is the only word in this message.
 
-    6 => NaN: not-a-number, IEEE 754 floating point NaN value.
+    6 => NaN: not-a-number, IEEE-754 floating point NaN value.
          Obtained when dividing zero by zero, for example. math.IsNaN()
          detects these.
 
@@ -186,38 +186,14 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
 ~~~
 msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 +---------------------------------------------------------------+
-|Q-BIT|    UTYPE    |                UCOUNT                     |
-+---------------------------------------------------------------+
-
-or equivalently:
-
-msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
-+---------------------------------------------------------------+
 | EVTNUM (21-bits)  |                UCOUNT (43-bits)           |
 +---------------------------------------------------------------+
-
-
-  Q-BIT => a single bit indicating in the UTYPE is a
-      system defined type, or a user-defined type.
-
-      0 => a Q-BIT of zero indicates the UTYPE is system-defined;
-           either by this specification, or a later version of this
-           specification. The corresponding EVTNUM event
-           numbers will be zero or positive.
-      1 => a Q-BIT of 1 indicates a user-defined UTYPE.
-           If needed, Users should feel free to define their
-           own type extensions with Q-BIT set to 1 and
-           with UTYPE between [2, 2^20]. The corresponding
-           EVTNUM even numbers will be negative, as
-           EVTNUM takes its sign from the Q-BIT and its
-           absolute value from the UTYPE, using the two's
-           compliment encoding for integers.
 
   UCOUNT => is a 43-bit unsigned integer number of bytes that
        follow as a part of this message. Zero is allowed as a
        value in UCOUNT, and is useful when the type information in UTYPE
        suffices to convey the event. Mask off the high 21-bits
-       of the UDE to erase the UTYPE and Q-BIT before using the count
+       of the UDE to erase the EVTNUM before using the count
        of bytes found in UCOUNT. The payload starts immediately
        after the UDE word, and can be up to 8TB long (2^43 bytes).
        Shorter payloads are recommended whenever possible.
@@ -229,25 +205,19 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        The next message's primary word will commence after the
        UCOUNT bytes that follow the UDE.
 
-  UTYPE => is a 20-bit unsigned integer giving the type of the
-       message to follow. 
-       
-       Certain UTYPE values are pre-defined event-type descriptors,
-       defined by this spec, and others are reserved for
-       user defined extensions. The Q-BIT tells you which
-       namespace is in use.
+  EVTNUM => a 21-bit signed two's-compliment integer capable
+       of expressing values in the range [-(2^20), (2^20)-1].
 
-  EVTNUM => this is the concatenation of Q-BIT and UTYPE.
-
-       Putting the Q-BIT and UTYPE together, we get a
-       21-bit signed integer capable of expressing
-       values in the range [-(2^20), (2^20)-1]. We will refer
-       to 21-bit signed integer as the EVTNUM value.
+       Positive numbers are for pre-defined system event
+       types. Negative numbers are reserved for user-defined
+       event types starting with -2, -3, -4, ...
 
        There is one pre-defined user-defined event number.
        The one pre-defined user EVTNUM value is:
 
-       -1 => an error message string in utf8 follows.
+       -1 => an error message string in utf8 follows; it is
+             of length UCOUNT, and always has a terminating
+             '\0' byte included in the UCOUNT.
 
        Any custom user-defined types added by the user will
        therefore start at EVTNUM = -2. The last usable EVTNUM is
@@ -263,23 +233,42 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
             writing a PTI of zero; although they are encouraged
             to do so whenever possible to save a word of space.
 
-       1 => an error message string in utf8 follows.
+       1..7 => these are reserved and should never actually
+               appear in the EVTNUM field on the wire. However
+               we defined them here to make the API
+               easier to use--when NewFrame() is called
+               with Evnum in this range, the PTI field is automatically
+               set accordingly. To provide documentation for
+               the NewFrame() calls evtnum formal parameter,
+               we will repeat the encoding here:
 
-       2 => a TMFRAME-HEADER value follows, giving time-series
+               1 => EvOne, the payload is defined to be the value 1.
+               2 => EvOneFloat64, the payload will be the
+                    following float64 value.
+               3 => EvTwo64, the payload will be the float64
+                    and the int64 that follow.
+	       4 => EvNull, payload is defined as the NULL value.
+	       5 => EvNA, payload is defined as NA, or Not-Available,
+                    denoting missing data.
+	       6 => EvNaN, payload denotes IEEE-754 Not-a-Number, NaN.
+	       7 => EvUDE, payload is describe by the UDE word that
+                    follows.
+
+       8 => a TMFRAME-HEADER value follows, giving time-series
             metadata. To be described later.
             
-       3 => a Msgpack encoded message follows.
+       9 => a Msgpack encoded message follows.
        
-       4 => a Binc encoded message follows.
+       10 => a Binc encoded message follows.
        
-       5 => a Capnproto encoded message segment follows.
+       11 => a Capnproto encoded message segment follows.
 
-       6 => a sequence of S-expressions (code or data) in zygomys
+       12 => a sequence of S-expressions (code or data) in zygomys
             parse format follows. [note 1]
  
-       7 => the payload is a UTF-8 encoded string.
+       13 => the payload is a UTF-8 encoded string.
 
-       8 => the payload is a JSON UTF-8 string.
+       14 => the payload is a JSON UTF-8 string.
 ~~~
 
 After any variable length payload that follows the UDE word, the

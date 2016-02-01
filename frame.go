@@ -19,7 +19,7 @@ const (
 	PtiZero       PTI = 0
 	PtiOne        PTI = 1
 	PtiOneFloat64 PTI = 2
-	PtiTwoFloat64 PTI = 3
+	PtiTwo64      PTI = 3
 	PtiNull       PTI = 4
 	PtiNA         PTI = 5
 	PtiNaN        PTI = 6
@@ -32,24 +32,36 @@ const (
 type Evtnum int32
 
 const (
-	Error   Evtnum = -1
-	Zero    Evtnum = 0
-	SysErr  Evtnum = 1
-	Header  Evtnum = 2
-	Msgpack Evtnum = 3
-	Binc    Evtnum = 4
-	Capnp   Evtnum = 5
-	Zygo    Evtnum = 6
-	Utf8    Evtnum = 7
-	Json    Evtnum = 8
+	EvErr Evtnum = -1
+
+	// 0-7 deliberately match the PTI to make the
+	// API easier to use. Callers to NewFrame need
+	// only specify an Evtnum, and the framing code
+	// sets PTI and EVTNUM correctly.
+	EvZero       Evtnum = 0
+	EvOne        Evtnum = 1
+	EvOneFloat64 Evtnum = 2
+	EvTwo64      Evtnum = 3
+	EvNull       Evtnum = 4
+	EvNA         Evtnum = 5
+	EvNaN        Evtnum = 6
+	EvUDE        Evtnum = 7
+
+	EvHeader  Evtnum = 8
+	EvMsgpack Evtnum = 9
+	EvBinc    Evtnum = 10
+	EvCapnp   Evtnum = 11
+	EvZygo    Evtnum = 12
+	EvUtf8    Evtnum = 13
+	EvJson    Evtnum = 14
 )
 
 // Frame holds a fully parsed TMFRAME message.
 type Frame struct {
 	Prim int64 // the primary word
 
-	V0 float64 // primary float64 value
-	V1 float64 // second float64
+	V0 float64 // primary float64 value, for EvOneFloat64 and EvTwo64
+	V1 int64   // uint64 secondary payload, for EvTwo64
 
 	// breakdown the Primary
 	Tm  int64 // low 3 bits all zeros, nanoseconds since unix epoch.
@@ -58,9 +70,8 @@ type Frame struct {
 	Ude int64 // the User-Defined-Encoding word
 
 	// break down the Ude:
-	IsUser bool // Q-BIT
-	Evnum  Evtnum
-	Ulen   int64
+	Evnum Evtnum
+	Ulen  int64
 
 	Data []byte // the variable length payload after the UDE
 }
@@ -85,7 +96,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 		n = 8
 	case PtiOneFloat64:
 		n = 16
-	case PtiTwoFloat64:
+	case PtiTwo64:
 		n = 24
 	case PtiNull:
 		n = 8
@@ -111,9 +122,9 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	switch f.Pti {
 	case PtiOneFloat64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
-	case PtiTwoFloat64:
+	case PtiTwo64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
-		binary.LittleEndian.PutUint64(m[16:24], math.Float64bits(f.V1))
+		binary.LittleEndian.PutUint64(m[16:24], uint64(f.V1))
 	case PtiUDE:
 		binary.LittleEndian.PutUint64(m[8:16], uint64(f.Ude))
 		if n == 16 {
@@ -143,9 +154,11 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	f.Pti = pti
 	f.Prim = int64(prim)
 	f.Tm = int64(prim - uint64(pti))
+	f.Evnum = Evtnum(pti)
 
 	switch pti {
 	case PtiZero:
+		f.V0 = 0.0
 		return by[8:], nil
 	case PtiOne:
 		f.V0 = 1.0
@@ -156,27 +169,25 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		}
 		f.V0 = math.Float64frombits(binary.LittleEndian.Uint64(by[8:16]))
 		return by[16:], nil
-	case PtiTwoFloat64:
+	case PtiTwo64:
 		if n < 24 {
 			return by, TooShortErr
 		}
 		f.V0 = math.Float64frombits(binary.LittleEndian.Uint64(by[8:16]))
-		f.V1 = math.Float64frombits(binary.LittleEndian.Uint64(by[16:24]))
+		f.V1 = int64(binary.LittleEndian.Uint64(by[16:24]))
 		return by[24:], nil
 	case PtiNull:
 		return by[8:], nil
 	case PtiNA:
 		return by[8:], nil
 	case PtiNaN:
-		f.V0 = MyNaN
+		// don't actually do this, as it make reflect.DeepEquals not work (of course): f.V0 = MyNaN
 		return by[8:], nil
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
 		f.Ude = int64(ude)
 		f.Evnum = Evtnum(ude >> 43)
 		if f.Ude < 0 {
-			Q("setting f.IsUser")
-			f.IsUser = true
 			f.Evnum -= (1 << 21)
 		}
 		ucount := ude & KeepLow43Bits
@@ -197,7 +208,7 @@ const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
 // NewFrame creates a new TMFRAME message, ready to have Marshal called on
 // for serialization into bytes.
-func NewFrame(tm time.Time, pti PTI, evtnum Evtnum, v0 float64, v1 float64, data []byte) *Frame {
+func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *Frame {
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
 
@@ -206,6 +217,7 @@ func NewFrame(tm time.Time, pti PTI, evtnum Evtnum, v0 float64, v1 float64, data
 	isUser := evtnum < 0
 	Q("isUser = %v", isUser)
 	if isUser {
+		// preserve the high bit for negative numbers/user events
 		en |= (1 << 21)
 	}
 	Q("pre shift en = %b", en)
@@ -216,18 +228,55 @@ func NewFrame(tm time.Time, pti PTI, evtnum Evtnum, v0 float64, v1 float64, data
 	ude := uint64(len(data)) | en
 	Q("ude = %b", ude)
 
-	f := &Frame{
-		Prim:   mod | int64(pti),
-		V0:     v0,
-		V1:     v1,
-		Tm:     mod,
-		Pti:    pti,
-		Ude:    int64(ude),
-		Evnum:  evtnum,
-		IsUser: isUser,
-		Ulen:   int64(len(data)),
-		Data:   data,
+	var useData []byte
+	var myUDE uint64
+
+	var pti PTI
+	switch evtnum {
+	case EvZero:
+		pti = PtiZero
+	case EvOne:
+		pti = PtiOne
+	case EvOneFloat64:
+		pti = PtiOneFloat64
+	case EvTwo64:
+		pti = PtiTwo64
+	case EvNull:
+		pti = PtiNull
+	case EvNA:
+		pti = PtiNA
+	case EvNaN:
+		pti = PtiNaN
+	default:
+		// includes case EvUDE and EvErr
+		pti = PtiUDE
+		useData = data
+		myUDE = ude
 	}
+
+	f := &Frame{
+		Prim:  mod | int64(pti),
+		Tm:    mod,
+		Pti:   pti,
+		Ude:   int64(myUDE),
+		Ulen:  int64(len(useData)),
+		Data:  useData,
+		Evnum: evtnum,
+	}
+
+	// set f.V0 and v.V1
+	switch evtnum {
+	case EvZero:
+		f.V0 = 0.0
+	case EvOne:
+		f.V0 = 1.0
+	case EvOneFloat64:
+		f.V0 = v0
+	case EvTwo64:
+		f.V0 = v0
+		f.V1 = v1
+	}
+
 	Q("f = %#v", f)
 	return f
 }
