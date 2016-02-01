@@ -102,9 +102,9 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        0 => this is also a zero value payload. The corresponding
             UCOUNT must also be 0. There are no other words
             in this message. This allows encoders to not
-            have to go back a compress out a zero value by
+            have to go back and compress out a zero value by
             writing a PTI of zero; although they are encouraged
-            to do so when possible to save a word of space.
+            to do so whenever possible to save a word of space.
 
        1 => a TMFRAME-HEADER value follows, giving time-series
             metadata. To be described later.
@@ -115,6 +115,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        
        4 => a Msgpack encoded message follows.
 
+       5 => an S-expression of code in zygomys format follows.
+       
 ~~~
 
 Copyright (c) 2016, Jason E. Aten.
