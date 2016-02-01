@@ -166,6 +166,12 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        user defined extensions. The Q-BIT tells you which
        namespace is in use.
 
+       There are two pre-defined user-defined types:
+
+       0 => zero value payload.
+       1 => error message string in utf8 follows.
+
+
        System defined UTYPE values as of this writing are:
 
        0 => this is also a zero value payload. The corresponding
@@ -175,7 +181,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
             writing a PTI of zero; although they are encouraged
             to do so whenever possible to save a word of space.
 
-       1 => an error message follows.
+       1 => an error message string in utf8 follows.
 
        2 => a TMFRAME-HEADER value follows, giving time-series
             metadata. To be described later.
@@ -188,7 +194,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 
        6 => a sequence of S-expressions (code or data) in zygomys
             parse format follows. [note 1]
-
+ 
+       7 => the payload is a UTF-8 encoded string.
 ~~~
 
 After any variable length payload that follows the UDE word, the
