@@ -47,11 +47,14 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
          less efficiently, by a UDE word with bits all 0).
     1 => exactly one 64-bit float64 value payload follows.
     2 => exactly two 64-bit float64 values follow.
-    3 => not-available, missing value. Written as NA.
-    4 => user-defined-encoding (UDE) descriptor follows.
-    5 => time-stamp only, no other value follows. (no UDE
+    3 => time-stamp only, no other value follows. (no UDE
           follows; the next value will be another primary word)
-    6 => (invalid and forbidden; reserved for future extension)
+    4 => user-defined-encoding (UDE) descriptor follows.
+    5 => NULL: the null-value, a known and intentionally null value. Written as NULL.
+    6 => NA: not-available, an unintentionally missing value.
+         In statistics, this indicates that *any* value could
+         have been the correct payload here, but that the
+         observation was not recorded. a.ka. "Missing data". Written as NA.
     7 => (invalid and forbidden; reserved for future extension)
 
 ~~~
