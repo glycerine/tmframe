@@ -129,7 +129,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        4 => a Msgpack encoded message follows.
 
        5 => a sequence of S-expressions (code or data) in zygomys
-            parse format follows. See https://github.com/glycerine/zygomys
+            parse format follows. See [https://github.com/glycerine/zygomys]
+            (https://github.com/glycerine/zygomys)
        
 ~~~
 
