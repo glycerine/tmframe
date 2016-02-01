@@ -96,7 +96,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
   UCOUNT => is a 43-bit unsigned integer number of bytes that
        follow as a part of this message. Zero is allowed as a
        value in C, and is useful when the type information in D
-       suffices to convey the event. Mask off the high 20-bits
+       suffices to convey the event. Mask off the high 21-bits
        of the UDE to erase the UTYPE before using the count
        of byte count in UCOUNT. The payload starts immediately
        after the UDE, and can be up to 8TB long (2^43 bytes).
