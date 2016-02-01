@@ -105,7 +105,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	case PtiNaN:
 		n = 8
 	case PtiUDE:
-		n = 16 + len(f.Data)
+		n = 16 + len(f.Data) + 1 // +1 for the zero termination that only goes on the wire
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
 	}
@@ -131,6 +131,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 			return m, nil
 		}
 		copy(m[16:], f.Data)
+		m[n-1] = 0
 	}
 
 	return m, nil
@@ -195,7 +196,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		if n < 16+f.Ulen {
 			return by, TooShortErr
 		}
-		f.Data = by[16 : 16+ucount]
+		f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
 		return by[16+ucount:], nil
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
@@ -206,12 +207,23 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 
 const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
+var NoDataAllowedErr = fmt.Errorf("data must be empty for this evtnum")
+
 // NewFrame creates a new TMFRAME message, ready to have Marshal called on
-// for serialization into bytes. It will make an internal copy of data if the evtnum
-// is an event that uses a UDE word. It will zero-terminate that data to
-// make interop with C bindings easier; hence the UCOUNT on the wire will
-// always include in its count this terminating zero byte.
-func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *Frame {
+// for serialization into bytes. It will not make an internal copy of data.
+// When copied on to the wire with Marshal(), a zero byte will be added
+// to the data to make interop with C bindings easier; hence the UCOUNT will
+// always include in its count this terminating zero byte if len(data) > 0.
+//
+func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*Frame, error) {
+
+	// sanity check that data is empty when it should be
+	if len(data) > 0 {
+		if evtnum >= 0 && evtnum < 7 {
+			return nil, NoDataAllowedErr
+		}
+	}
+
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
 
@@ -233,6 +245,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 
 	var useData []byte
 	var myUDE uint64
+	var myUlen int64
 
 	var pti PTI
 	switch evtnum {
@@ -253,10 +266,11 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 	default:
 		// includes case EvUDE and EvErr
 		pti = PtiUDE
-		// zero terminate any data we have
-		useData = make([]byte, len(data)+1)
-		copy(useData, data)
+		useData = data
 		myUDE = ude
+		if len(useData) > 0 {
+			myUlen = int64(len(useData) + 1)
+		}
 	}
 
 	f := &Frame{
@@ -264,7 +278,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 		Tm:    mod,
 		Pti:   pti,
 		Ude:   int64(myUDE),
-		Ulen:  int64(len(useData)),
+		Ulen:  myUlen,
 		Data:  useData,
 		Evnum: evtnum,
 	}
@@ -283,5 +297,5 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) *F
 	}
 
 	Q("f = %#v", f)
-	return f
+	return f, nil
 }

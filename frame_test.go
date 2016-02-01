@@ -13,15 +13,16 @@ func TestParsingTMFRAME(t *testing.T) {
 		msg := []byte("fake msg")
 		pti := PtiUDE
 		event := EvUtf8
-		frame := NewFrame(tm, event, 0, 0, msg)
+		frame, err := NewFrame(tm, event, 0, 0, msg)
+		panicOn(err)
 
 		nano := tm.UnixNano()
 		low3 := nano % 8
 
 		cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
-		cv.So(string(frame.Data), cv.ShouldEqual, string(msg)+string(0))
+		cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
 		cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1)
-		cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data))
+		cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
 		cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
 		cv.So(frame.Prim, cv.ShouldEqual, frame.Tm|int64(pti))
 		by, err := frame.Marshal(nil)
@@ -34,24 +35,28 @@ func TestParsingTMFRAME(t *testing.T) {
 
 	})
 
-	cv.Convey("We should be able to marshal and unmarshal User typed messages (q-bit == 1; with evnnum < 0)", t, func() {
+	cv.Convey("We should be able to marshal and unmarshal User and system Evtnum messages", t, func() {
 
 		for ev := -4; ev < 14; ev++ {
-
+			Q("ev = %v", ev)
 			tm := time.Now()
 			msg := []byte("fake msg")
+			if ev >= 0 && ev < 7 {
+				msg = msg[:0] // don't pass data when its not used; we flag this as an error.
+			}
 			pti := PtiUDE
 			evnum := Evtnum(ev)
-			frame := NewFrame(tm, evnum, 0, 0, msg)
+			frame, err := NewFrame(tm, evnum, 0, 0, msg)
+			panicOn(err)
 
 			nano := tm.UnixNano()
 			low3 := nano % 8
 
 			cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
 			if ev <= -1 || ev >= 7 {
-				cv.So(string(frame.Data), cv.ShouldEqual, string(msg)+string(0))
+				cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
 				cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1) // +1 for the zero terminating byte
-				cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data))
+				cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
 				cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
 			} else {
 				Q(" ev = %v", ev)
@@ -72,4 +77,18 @@ func TestParsingTMFRAME(t *testing.T) {
 		}
 	})
 
+}
+
+func TestWrongArgsToNewFrame(t *testing.T) {
+	cv.Convey("When NewFrame() is called with data and the evtnum will be ignoring it, this should be flagged as an error", t, func() {
+
+		for ev := 0; ev < 7; ev++ {
+
+			tm := time.Now()
+			msg := []byte("fake msg")
+			_, err := NewFrame(tm, Evtnum(ev), 0, 0, msg)
+			cv.So(err, cv.ShouldEqual, NoDataAllowedErr)
+		}
+
+	})
 }
