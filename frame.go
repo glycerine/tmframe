@@ -41,6 +41,7 @@ const (
 	Capnp   Evtnum = 5
 	Zygo    Evtnum = 6
 	Utf8    Evtnum = 7
+	Json    Evtnum = 8
 )
 
 // Frame holds a fully parsed TMFRAME message.

@@ -278,6 +278,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
             parse format follows. [note 1]
  
        7 => the payload is a UTF-8 encoded string.
+
+       8 => the payload is a JSON UTF-8 string.
 ~~~
 
 After any variable length payload that follows the UDE word, the
