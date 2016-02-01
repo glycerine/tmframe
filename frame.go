@@ -105,7 +105,10 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	case PtiNaN:
 		n = 8
 	case PtiUDE:
-		n = 16 + len(f.Data) + 1 // +1 for the zero termination that only goes on the wire
+		n = 16
+		if len(f.Data) > 0 {
+			n += len(f.Data) + 1 // +1 for the zero termination that only goes on the wire
+		}
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
 	}

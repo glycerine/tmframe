@@ -92,3 +92,23 @@ func TestWrongArgsToNewFrame(t *testing.T) {
 
 	})
 }
+
+func TestUDEwithZeroDataOkay(t *testing.T) {
+	cv.Convey("When NewFrame() evtnum is UDE using and len(data) == 0, this should be okay and only result in 16 bytes serialized", t, func() {
+
+		for ev := -15; ev < 15; ev++ {
+			tm := time.Now()
+			frame, err := NewFrame(tm, Evtnum(ev), 0, 0, nil)
+			cv.So(err, cv.ShouldEqual, nil)
+			cv.So(frame.Ulen, cv.ShouldEqual, 0)
+			if ev < 0 {
+				cv.So(frame.Ude, cv.ShouldNotEqual, 0)
+				by, err := frame.Marshal(nil)
+				panicOn(err)
+				Q("ev = %v", ev)
+				cv.So(len(by), cv.ShouldEqual, 16)
+			}
+
+		}
+	})
+}
