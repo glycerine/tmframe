@@ -24,6 +24,13 @@ timestamp and one for the float64 payload).
 
 # 2. primary word encoding
 
+A TMFRAME message always starts with a primary word.
+
+Depending on the content of the low 3 bits of the primary word,
+the primary word may be the only bytes in the message.
+However, there may also be additional bytes following the
+primary word that complete the message.
+
 ~~~
 
 msb            primary timeframe 64-bit word                  lsb
