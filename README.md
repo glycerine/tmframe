@@ -29,18 +29,17 @@ timestamp and one for the float64 payload).
 A TMFRAME message always starts with a primary word.
 
 Depending on the content of the low 3 bits of the primary word,
-the primary word may be the only bytes in the message.
-However, there may also be additional bytes following the
+the primary word may be the entire message.
+However, there may also be additional words and bytes following the
 primary word that complete the message.
 
-TMFRAME messages will either be 8 bytes (primary word only);
-16 bytes long (primary word + UDE word only); or
-greater than 16 bytes long.
+TMFRAME messages can be classified as being either be 8 bytes
+(primary word only), 16 bytes long, greater than 16 bytes long.
 
 Frequently a TMFRAME message will consist of one primary word,
 one UDE word, and a variable length payload.
 
-The primary word and UDE word are always 64-bits. The payload
+The primary word and UDE word are always 64-bit words each. The payload
 can be up to 2^43 bytes in length.
 
 We illustrate the possible TMFRAME message lengths here:
@@ -77,8 +76,8 @@ c) primary word + UDE word + variable byte-length message:
 +-------------------------------------------------------
 ~~~
 
-There are also two special payload types that are not UDE based,
-as they handle the common case of attaching one or two
+There are also two special payload types that are not UDE based.
+They handle the common case of attaching one or two
 float64 values to a timestamp.
 
 d) primary word + one float64
