@@ -252,9 +252,19 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	panic("should never get here")
 }
 
+// KeepLow43Bits allows one to mask off a UDE and discover
+// the UCOUNT in the lower 43 bits quickly.
+// For example: ucount := ude & KeepLow43Bits
+//
 const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
+// NoDataAllowedErr is returned from NewFrame() when the
+// data argument is supplied but not conveyed in that
+// evtnum specified.
 var NoDataAllowedErr = fmt.Errorf("data must be empty for this evtnum")
+
+// EvtnumOutOfRangeErr is retuned from NewFrame() when
+// the evtnum is out of the allowed range.
 var EvtnumOutOfRangeErr = fmt.Errorf("evtnum out of range. min allowed is -1048576, max is 1048575")
 
 // Validate our acceptable range of evtnum.
