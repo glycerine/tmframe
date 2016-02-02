@@ -47,13 +47,14 @@ const (
 	EvNaN        Evtnum = 6
 	EvUDE        Evtnum = 7
 
-	EvHeader  Evtnum = 8
-	EvMsgpack Evtnum = 9
-	EvBinc    Evtnum = 10
-	EvCapnp   Evtnum = 11
-	EvZygo    Evtnum = 12
-	EvUtf8    Evtnum = 13
-	EvJson    Evtnum = 14
+	EvHeader    Evtnum = 8
+	EvMsgpack   Evtnum = 9
+	EvBinc      Evtnum = 10
+	EvCapnp     Evtnum = 11
+	EvZygo      Evtnum = 12
+	EvUtf8      Evtnum = 13
+	EvJson      Evtnum = 14
+	EvMsgpKafka Evtnum = 15
 )
 
 // Frame holds a fully parsed TMFRAME message.
@@ -77,10 +78,9 @@ type Frame struct {
 }
 
 var MyNaN float64
-var zero = 0.0
 
 func init() {
-	MyNaN = 0.0 / zero
+	MyNaN = math.NaN()
 }
 
 // Marshal serialized the Frame into bytes. We'll
