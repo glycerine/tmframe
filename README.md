@@ -222,7 +222,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
 
        -1 => an error message string in utf8 follows; it is
              of length UCOUNT, and the count includes a
-             zero termination byte.
+             zero termination byte if and only if the string has
+             one or more bytes in it.
 
        Any custom user-defined types added by the user will
        therefore start at EVTNUM = -2. The last usable EVTNUM is
