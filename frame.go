@@ -69,8 +69,8 @@ type Frame struct {
 	Ude int64 // the User-Defined-Encoding word
 
 	// break down the Ude:
-	//Evnum Evtnum
-	//Ulen  int64
+	//GetEvtnum() Evtnum
+	//GetUlen()  int64
 
 	Data []byte // the variable length payload after the UDE
 }
@@ -101,10 +101,6 @@ func (f *Frame) GetEvtnum() Evtnum {
 		return evnum
 	}
 	evnum = Evtnum(f.Ude >> 43)
-	P("f.Ude = %v, evnum before neg adj: %v", f.Ude, evnum)
-	//	if f.Ude < 0 {
-	//		evnum -= (1 << 21)
-	//	}
 	return evnum
 }
 
@@ -209,10 +205,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	prim := binary.LittleEndian.Uint64(by[:8])
 	pti := PTI(prim % 8)
 
-	//f.Pti = pti
 	f.Prim = int64(prim)
-	//f.Tm = int64(prim - uint64(pti))
-	//f.Evnum = Evtnum(pti) // correct for 0-7, the rest get fixed below.
 
 	switch pti {
 	case PtiZero:
@@ -244,18 +237,14 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
 		f.Ude = int64(ude)
-		/*
-			f.Evnum = Evtnum(ude >> 43)
-			if f.Ude < 0 {
-				f.Evnum -= (1 << 21)
-			}
-		*/
 		ucount := ude & KeepLow43Bits
 		ulen := int64(ucount)
 		if n < 16+ulen {
 			return by, TooShortErr
 		}
-		f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
+		if ulen > 0 {
+			f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
+		}
 		return by[16+ucount:], nil
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", pti))
@@ -266,6 +255,16 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 
 var NoDataAllowedErr = fmt.Errorf("data must be empty for this evtnum")
+var EvtnumOutOfRangeErr = fmt.Errorf("evtnum out of range. min allowed is -1048576, max is 1048575")
+
+// Validate our acceptable range of evtnum.
+// The min allowed is -1048576, max allowed is 1048575
+func ValidEvtnum(evtnum Evtnum) bool {
+	if evtnum > 1048575 || evtnum < -1048576 {
+		return false
+	}
+	return true
+}
 
 // NewFrame creates a new TMFRAME message, ready to have Marshal called on
 // for serialization into bytes. It will not make an internal copy of data.
@@ -274,6 +273,10 @@ var NoDataAllowedErr = fmt.Errorf("data must be empty for this evtnum")
 // always include in its count this terminating zero byte if len(data) > 0.
 //
 func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*Frame, error) {
+
+	if !ValidEvtnum(evtnum) {
+		return nil, EvtnumOutOfRangeErr
+	}
 
 	// sanity check that data is empty when it should be
 	if len(data) > 0 {
@@ -285,14 +288,8 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	utm := tm.UnixNano()
 	mod := utm - (utm % 8)
 
-	en := uint64(evtnum % (1 << 20))
+	en := uint64(evtnum % (1 << 21))
 	Q("en = %v", en)
-	isUser := evtnum < 0
-	Q("isUser = %v", isUser)
-	if isUser {
-		// preserve the high bit for negative numbers/user events
-		en |= (1 << 21)
-	}
 	Q("pre shift en = %b", en)
 	en = en << 43
 	Q("post shift en = %b", en)
@@ -332,19 +329,12 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 		pti = PtiUDE
 		useData = data
 		myUDE = ude
-		//if len(useData) > 0 {
-		//	myUlen = int64(len(useData) + 1)
-		//}
 	}
 
 	f := &Frame{
 		Prim: mod | int64(pti),
-		//Tm:    mod,
-		//Pti:   pti,
-		Ude: int64(myUDE),
-		//Ulen:  myUlen,
+		Ude:  int64(myUDE),
 		Data: useData,
-		//Evnum: evtnum,
 	}
 
 	// set f.V0 and v.V1

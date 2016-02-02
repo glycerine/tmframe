@@ -1,6 +1,7 @@
 package frame
 
 import (
+	"fmt"
 	cv "github.com/glycerine/goconvey/convey"
 	"testing"
 	"time"
@@ -37,7 +38,9 @@ func TestParsingTMFRAME(t *testing.T) {
 
 	cv.Convey("We should be able to marshal and unmarshal User and system Evtnum messages", t, func() {
 
-		for ev := -4; ev < 14; ev++ {
+		x := []int{-1048576, 1048575, 1048574, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+
+		for _, ev := range x {
 			Q("ev = %v", ev)
 			tm := time.Now()
 			msg := []byte("fake msg")
@@ -71,7 +74,7 @@ func TestParsingTMFRAME(t *testing.T) {
 			var frame2 Frame
 			frame2.Unmarshal(by)
 			cv.So(&frame2, cv.ShouldResemble, frame)
-			P("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
+			Q("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
 			cv.So(frame2.GetEvtnum(), cv.ShouldEqual, ev)
 			Q("frame2.Tm = %v", time.Unix(0, frame2.GetTm()))
 			Q("tm = %v", tm)
@@ -112,4 +115,71 @@ func TestUDEwithZeroDataOkay(t *testing.T) {
 
 		}
 	})
+}
+
+func TestEvtnumOutOfRange(t *testing.T) {
+	cv.Convey("When NewFrame() evtnum is out of range, an error should be returned", t, func() {
+
+		tm := time.Now()
+		max := 1048575
+		min := -1048576
+
+		var err error
+
+		_, err = NewFrame(tm, Evtnum(max), 0, 0, nil)
+		cv.So(err, cv.ShouldEqual, nil)
+
+		_, err = NewFrame(tm, Evtnum(min), 0, 0, nil)
+		cv.So(err, cv.ShouldEqual, nil)
+
+		_, err = NewFrame(tm, Evtnum(min-1), 0, 0, nil)
+		cv.So(err, cv.ShouldEqual, EvtnumOutOfRangeErr)
+
+		_, err = NewFrame(tm, Evtnum(max+1), 0, 0, nil)
+		cv.So(err, cv.ShouldEqual, EvtnumOutOfRangeErr)
+	})
+}
+
+// Demonstrate that the right shift does sign extension:
+//
+// the golang spec calls them "arithmetic shifts", but
+// we known them as "sign-extending shifts".
+//
+// https://golang.org/ref/spec#Arithmetic_operators
+//
+// "The shift operators shift the left operand by the shift count
+//  specified by the right operand. They implement arithmetic shifts
+//  if the left operand is a signed integer and logical shifts if
+//  it is an unsigned integer."
+//
+// Run this function if you want to see for yourself. Output:
+/*
+i=-8796093022208  top 21 bits: -1
+i=-17592186044416  top 21 bits: -2
+i=-35184372088832  top 21 bits: -4
+i=-70368744177664  top 21 bits: -8
+i=-140737488355328  top 21 bits: -16
+i=-281474976710656  top 21 bits: -32
+i=-562949953421312  top 21 bits: -64
+i=-1125899906842624  top 21 bits: -128
+i=-2251799813685248  top 21 bits: -256
+i=-4503599627370496  top 21 bits: -512
+i=-9007199254740992  top 21 bits: -1024
+i=-18014398509481984  top 21 bits: -2048
+i=-36028797018963968  top 21 bits: -4096
+i=-72057594037927936  top 21 bits: -8192
+i=-144115188075855872  top 21 bits: -16384
+i=-288230376151711744  top 21 bits: -32768
+i=-576460752303423488  top 21 bits: -65536
+i=-1152921504606846976  top 21 bits: -131072
+i=-2305843009213693952  top 21 bits: -262144
+i=-4611686018427387904  top 21 bits: -524288
+i=-9223372036854775808  top 21 bits: -1048576
+*/
+func signed_right_shift_demo() {
+	b := -1 << 43
+	e := -1
+	for i := b; i < e; i = i << 1 {
+		fmt.Printf("i=%v  top 21 bits: %v\n", i, int32(i>>43))
+	}
 }
