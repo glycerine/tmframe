@@ -77,6 +77,59 @@ type Frame struct {
 	Data []byte // the variable length payload after the UDE
 }
 
+func (f *Frame) GetTm() int64 {
+	return f.Prim &^ 7
+}
+
+func (f *Frame) GetPTI() PTI {
+	return PTI(f.Prim & 7)
+}
+
+func (f *Frame) GetUDE() int64 {
+	return f.Ude
+}
+
+func (f *Frame) GetUlen() int64 {
+	if f.GetPTI() != PtiUDE || len(f.Data) == 0 {
+		return 0
+	}
+	return int64(len(f.Data)) + 1 // +1 for the zero termination that only goes on the wire
+}
+
+func (f *Frame) GetEvtnum() Evtnum {
+	pti := f.GetPTI()
+	evnum := Evtnum(pti)
+	if pti != PtiUDE {
+		return evnum
+	}
+	evnum = Evtnum(f.Ude >> 43)
+	if f.Ude < 0 {
+		evnum -= (1 << 21)
+	}
+	return evnum
+}
+
+func (f *Frame) GetV0() float64 {
+	switch f.Pti {
+	case PtiZero:
+		return 0
+	case PtiOne:
+		return 1
+	case PtiOneFloat64:
+		return f.V0
+	case PtiTwo64:
+		return f.V0
+	}
+	return MyNaN
+}
+
+func (f *Frame) GetV1() int64 {
+	if f.GetPTI() == PtiTwo64 {
+		return f.V1
+	}
+	return 0
+}
+
 var MyNaN float64
 
 func init() {
