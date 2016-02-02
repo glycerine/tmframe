@@ -19,12 +19,12 @@ func TestParsingTMFRAME(t *testing.T) {
 		nano := tm.UnixNano()
 		low3 := nano % 8
 
-		cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
+		cv.So(frame.GetTm(), cv.ShouldEqual, nano-low3)
 		cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
 		cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1)
 		cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
-		cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
-		cv.So(frame.Prim, cv.ShouldEqual, frame.Tm|int64(pti))
+		cv.So(frame.GetPTI(), cv.ShouldEqual, PtiUDE)
+		cv.So(frame.Prim, cv.ShouldEqual, frame.GetTm()|int64(pti))
 		by, err := frame.Marshal(nil)
 		panicOn(err)
 		Q("by = '%v'", string(by))
@@ -52,17 +52,17 @@ func TestParsingTMFRAME(t *testing.T) {
 			nano := tm.UnixNano()
 			low3 := nano % 8
 
-			cv.So(frame.Tm, cv.ShouldEqual, nano-low3)
+			cv.So(frame.GetTm(), cv.ShouldEqual, nano-low3)
 			if ev <= -1 || ev >= 7 {
 				cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
 				cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1) // +1 for the zero terminating byte
 				cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
-				cv.So(frame.Pti, cv.ShouldEqual, PtiUDE)
+				cv.So(frame.GetPTI(), cv.ShouldEqual, PtiUDE)
 			} else {
 				Q(" ev = %v", ev)
 				pti = PTI(ev)
-				cv.So(frame.Pti, cv.ShouldEqual, ev)
-				cv.So(frame.Prim, cv.ShouldEqual, frame.Tm|int64(pti))
+				cv.So(frame.GetPTI(), cv.ShouldEqual, ev)
+				cv.So(frame.Prim, cv.ShouldEqual, frame.GetTm()|int64(pti))
 			}
 			by, err := frame.Marshal(nil)
 			panicOn(err)
@@ -72,7 +72,7 @@ func TestParsingTMFRAME(t *testing.T) {
 			frame2.Unmarshal(by)
 			cv.So(&frame2, cv.ShouldResemble, frame)
 			cv.So(frame2.Evnum, cv.ShouldEqual, ev)
-			Q("frame2.Tm = %v", time.Unix(0, frame2.Tm))
+			Q("frame2.Tm = %v", time.Unix(0, frame2.GetTm()))
 			Q("tm = %v", tm)
 		}
 	})

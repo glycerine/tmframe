@@ -60,13 +60,11 @@ const (
 // Frame holds a fully parsed TMFRAME message.
 type Frame struct {
 	Prim int64 // the primary word
+	//GetTm()  int64 // returns low 3 bits all zeros, nanoseconds since unix epoch.
+	//GetPTI() PTI   // returns low 3 bits of the primary word
 
 	V0 float64 // primary float64 value, for EvOneFloat64 and EvTwo64
 	V1 int64   // uint64 secondary payload, for EvTwo64
-
-	// breakdown the Primary
-	Tm  int64 // low 3 bits all zeros, nanoseconds since unix epoch.
-	Pti PTI   // low 3 bits of the primary word
 
 	Ude int64 // the User-Defined-Encoding word
 
@@ -110,7 +108,8 @@ func (f *Frame) GetEvtnum() Evtnum {
 }
 
 func (f *Frame) GetV0() float64 {
-	switch f.Pti {
+	pti := f.GetPTI()
+	switch pti {
 	case PtiZero:
 		return 0
 	case PtiOne:
@@ -142,7 +141,8 @@ func init() {
 // that we wrote, plus any error.
 func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	n := 8
-	switch f.Pti {
+	pti := f.GetPTI()
+	switch pti {
 	case PtiZero:
 		n = 8
 	case PtiOne:
@@ -163,7 +163,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 			n += len(f.Data) + 1 // +1 for the zero termination that only goes on the wire
 		}
 	default:
-		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
+		panic(fmt.Sprintf("unrecog pti: %v", pti))
 	}
 	var m []byte
 	if len(buf) >= n {
@@ -175,7 +175,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	if n == 8 {
 		return m, nil
 	}
-	switch f.Pti {
+	switch pti {
 	case PtiOneFloat64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
 	case PtiTwo64:
@@ -208,10 +208,10 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	prim := binary.LittleEndian.Uint64(by[:8])
 	pti := PTI(prim % 8)
 
-	f.Pti = pti
+	//f.Pti = pti
 	f.Prim = int64(prim)
-	f.Tm = int64(prim - uint64(pti))
-	f.Evnum = Evtnum(pti)
+	//f.Tm = int64(prim - uint64(pti))
+	f.Evnum = Evtnum(pti) // correct for 0-7, the rest get fixed below.
 
 	switch pti {
 	case PtiZero:
@@ -255,8 +255,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
 		return by[16+ucount:], nil
 	default:
-		panic(fmt.Sprintf("unrecog pti: %v", f.Pti))
-
+		panic(fmt.Sprintf("unrecog pti: %v", pti))
 	}
 	panic("should never get here")
 }
@@ -330,9 +329,9 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	}
 
 	f := &Frame{
-		Prim:  mod | int64(pti),
-		Tm:    mod,
-		Pti:   pti,
+		Prim: mod | int64(pti),
+		//Tm:    mod,
+		//Pti:   pti,
 		Ude:   int64(myUDE),
 		Ulen:  myUlen,
 		Data:  useData,
