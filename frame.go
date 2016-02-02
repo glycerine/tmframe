@@ -190,6 +190,9 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	return m, nil
 }
 
+// TooShortErr is returned by Frame.Unmarshal() when the
+// by bytes are supplied are insufficient for the encoded
+// EVTNUM or UCOUNT.
 var TooShortErr = fmt.Errorf("data supplied is too short to represent a TMFRAME frame")
 
 // Unmarshal overwrites f with the restored value of the TMFRAME found
