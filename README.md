@@ -299,7 +299,7 @@ required.
 
 ### implementation
 
-There is a basic Go implementation in this repo. [Docs here](https://godoc.org/github.com/glycerine/tmframe).
+There is a full Go implementation in this repo. [Docs here](https://godoc.org/github.com/glycerine/tmframe).
 
 ### notes
 
