@@ -126,6 +126,8 @@ func (f *Frame) GetV1() int64 {
 	return 0
 }
 
+// MyNaN provides the IEEE-754 floating point NaN value
+// without having to make a call each time to math.NaN().
 var MyNaN float64
 
 func init() {
