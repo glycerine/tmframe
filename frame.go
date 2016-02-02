@@ -69,8 +69,8 @@ type Frame struct {
 	Ude int64 // the User-Defined-Encoding word
 
 	// break down the Ude:
-	Evnum Evtnum
-	Ulen  int64
+	//Evnum Evtnum
+	//Ulen  int64
 
 	Data []byte // the variable length payload after the UDE
 }
@@ -101,9 +101,10 @@ func (f *Frame) GetEvtnum() Evtnum {
 		return evnum
 	}
 	evnum = Evtnum(f.Ude >> 43)
-	if f.Ude < 0 {
-		evnum -= (1 << 21)
-	}
+	P("f.Ude = %v, evnum before neg adj: %v", f.Ude, evnum)
+	//	if f.Ude < 0 {
+	//		evnum -= (1 << 21)
+	//	}
 	return evnum
 }
 
@@ -211,7 +212,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	//f.Pti = pti
 	f.Prim = int64(prim)
 	//f.Tm = int64(prim - uint64(pti))
-	f.Evnum = Evtnum(pti) // correct for 0-7, the rest get fixed below.
+	//f.Evnum = Evtnum(pti) // correct for 0-7, the rest get fixed below.
 
 	switch pti {
 	case PtiZero:
@@ -243,13 +244,15 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	case PtiUDE:
 		ude := binary.LittleEndian.Uint64(by[8:16])
 		f.Ude = int64(ude)
-		f.Evnum = Evtnum(ude >> 43)
-		if f.Ude < 0 {
-			f.Evnum -= (1 << 21)
-		}
+		/*
+			f.Evnum = Evtnum(ude >> 43)
+			if f.Ude < 0 {
+				f.Evnum -= (1 << 21)
+			}
+		*/
 		ucount := ude & KeepLow43Bits
-		f.Ulen = int64(ucount)
-		if n < 16+f.Ulen {
+		ulen := int64(ucount)
+		if n < 16+ulen {
 			return by, TooShortErr
 		}
 		f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
@@ -295,12 +298,18 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	Q("post shift en = %b", en)
 	Q("len(data) = %v", len(data))
 	Q("len(data) = %b", len(data))
-	ude := uint64(len(data)+1) | en // the +1 is so we zero-terminate strings -- for C bindings
+	var ude uint64
+	if len(data) > 0 {
+		// the +1 is so we zero-terminate strings -- for C bindings
+		ude = uint64(len(data)+1) | en
+	} else {
+		ude = en
+	}
 	Q("ude = %b", ude)
 
 	var useData []byte
 	var myUDE uint64
-	var myUlen int64
+	//var myUlen int64
 
 	var pti PTI
 	switch evtnum {
@@ -323,19 +332,19 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 		pti = PtiUDE
 		useData = data
 		myUDE = ude
-		if len(useData) > 0 {
-			myUlen = int64(len(useData) + 1)
-		}
+		//if len(useData) > 0 {
+		//	myUlen = int64(len(useData) + 1)
+		//}
 	}
 
 	f := &Frame{
 		Prim: mod | int64(pti),
 		//Tm:    mod,
 		//Pti:   pti,
-		Ude:   int64(myUDE),
-		Ulen:  myUlen,
-		Data:  useData,
-		Evnum: evtnum,
+		Ude: int64(myUDE),
+		//Ulen:  myUlen,
+		Data: useData,
+		//Evnum: evtnum,
 	}
 
 	// set f.V0 and v.V1

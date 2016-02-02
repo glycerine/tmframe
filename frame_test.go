@@ -21,8 +21,8 @@ func TestParsingTMFRAME(t *testing.T) {
 
 		cv.So(frame.GetTm(), cv.ShouldEqual, nano-low3)
 		cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
-		cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1)
-		cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
+		cv.So(frame.GetUlen(), cv.ShouldEqual, len(msg)+1)
+		cv.So(frame.GetUlen(), cv.ShouldEqual, len(frame.Data)+1)
 		cv.So(frame.GetPTI(), cv.ShouldEqual, PtiUDE)
 		cv.So(frame.Prim, cv.ShouldEqual, frame.GetTm()|int64(pti))
 		by, err := frame.Marshal(nil)
@@ -55,8 +55,8 @@ func TestParsingTMFRAME(t *testing.T) {
 			cv.So(frame.GetTm(), cv.ShouldEqual, nano-low3)
 			if ev <= -1 || ev >= 7 {
 				cv.So(string(frame.Data), cv.ShouldEqual, string(msg))
-				cv.So(frame.Ulen, cv.ShouldEqual, len(msg)+1) // +1 for the zero terminating byte
-				cv.So(frame.Ulen, cv.ShouldEqual, len(frame.Data)+1)
+				cv.So(frame.GetUlen(), cv.ShouldEqual, len(msg)+1) // +1 for the zero terminating byte
+				cv.So(frame.GetUlen(), cv.ShouldEqual, len(frame.Data)+1)
 				cv.So(frame.GetPTI(), cv.ShouldEqual, PtiUDE)
 			} else {
 				Q(" ev = %v", ev)
@@ -71,7 +71,8 @@ func TestParsingTMFRAME(t *testing.T) {
 			var frame2 Frame
 			frame2.Unmarshal(by)
 			cv.So(&frame2, cv.ShouldResemble, frame)
-			cv.So(frame2.Evnum, cv.ShouldEqual, ev)
+			P("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
+			cv.So(frame2.GetEvtnum(), cv.ShouldEqual, ev)
 			Q("frame2.Tm = %v", time.Unix(0, frame2.GetTm()))
 			Q("tm = %v", tm)
 		}
@@ -100,7 +101,7 @@ func TestUDEwithZeroDataOkay(t *testing.T) {
 			tm := time.Now()
 			frame, err := NewFrame(tm, Evtnum(ev), 0, 0, nil)
 			cv.So(err, cv.ShouldEqual, nil)
-			cv.So(frame.Ulen, cv.ShouldEqual, 0)
+			cv.So(frame.GetUlen(), cv.ShouldEqual, 0)
 			if ev < 0 {
 				cv.So(frame.Ude, cv.ShouldNotEqual, 0)
 				by, err := frame.Marshal(nil)
