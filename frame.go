@@ -5,8 +5,10 @@ format which we implement here.
 package frame
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"time"
 )
@@ -134,12 +136,11 @@ func init() {
 	MyNaN = math.NaN()
 }
 
-// Marshal serialized the Frame into bytes. We'll
-// reuse the space pointed to by buf if there is
-// sufficient space in it. We return the bytes
-// that we wrote, plus any error.
-func (f *Frame) Marshal(buf []byte) ([]byte, error) {
-	n := 8
+// NumBytes returns the number of bytes that the
+// serialized Frame will consume on the wire. It
+// will be at least 8, and at most 8 + 2^43
+func (f *Frame) NumBytes() int64 {
+	n := int64(8)
 	pti := f.GetPTI()
 	switch pti {
 	case PtiZero:
@@ -159,13 +160,23 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	case PtiUDE:
 		n = 16
 		if len(f.Data) > 0 {
-			n += len(f.Data) + 1 // +1 for the zero termination that only goes on the wire
+			n += int64(len(f.Data)) + 1 // +1 for the zero termination that only goes on the wire
 		}
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", pti))
 	}
+	return n
+}
+
+// Marshal serialized the Frame into bytes. We'll
+// reuse the space pointed to by buf if there is
+// sufficient space in it. We return the bytes
+// that we wrote, plus any error.
+func (f *Frame) Marshal(buf []byte) ([]byte, error) {
+	n := f.NumBytes()
+
 	var m []byte
-	if len(buf) >= n {
+	if int64(len(buf)) >= n {
 		m = buf[:n]
 	} else {
 		m = make([]byte, n)
@@ -174,6 +185,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	if n == 8 {
 		return m, nil
 	}
+	pti := f.GetPTI()
 	switch pti {
 	case PtiOneFloat64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
@@ -367,4 +379,190 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 
 	Q("f = %#v", f)
 	return f, nil
+}
+
+// FrameReader provides assistance for reading successive
+// Frames from an io.Reader.
+// FrameReader uses bufio to peek ahead and determine
+// the size of the next frame -- see PeekNextFrame()
+// and NextFrame().
+type FrameReader struct {
+	r             *bufio.Reader
+	maxFrameBytes int64
+	by            []byte
+}
+
+// NewFrameReader makes a new FrameReader. It imposes a
+// message size limit of maxFrameBytes in order to size
+// its internal read buffer.
+func NewFrameReader(r io.Reader, maxFrameBytes int64) *FrameReader {
+	return &FrameReader{
+		r:             bufio.NewReaderSize(r, 16),
+		maxFrameBytes: maxFrameBytes,
+		by:            make([]byte, maxFrameBytes),
+	}
+}
+
+// PeekNextFrame returns the size of the next frame in bytes.
+//
+// The returned err will be non-nil if we could encountered insufficient
+// data to determine the size of the next frame. If err is
+// non-nil then nBytes will be 0.
+//
+// Otherwise, if err is nil then nBytes holds the number of
+// bytes in the next frame in FrameReader's underlying io.Reader.
+func (fr *FrameReader) PeekNextFrame() (nBytes int64, err error) {
+
+	var nAvail int64
+
+	// peek at primary word and UDE
+	by, err := fr.r.Peek(16)
+	if err != nil {
+		//P("err on Peek(16): '%s'", err)
+		if len(by) < 8 {
+			return 0, err
+		}
+	}
+	nAvail = int64(len(by))
+	// INVAR: nAvail >= 8
+
+	// INVAR: if nAvail < 16, then err is not nil
+
+	// determine how many bytes this message needs
+	prim := int64(binary.LittleEndian.Uint64(by[:8]))
+	pti := PTI(prim % 8)
+
+	switch pti {
+	case PtiZero:
+		return 8, nil
+	case PtiOne:
+		return 8, nil
+	case PtiNull:
+		return 8, nil
+	case PtiNA:
+		return 8, nil
+	case PtiNaN:
+		return 8, nil
+	case PtiOneFloat64:
+		if nAvail < 16 {
+			return 0, err
+		}
+		return 16, nil
+	case PtiTwo64:
+		if nAvail < 16 {
+			return 0, err
+		}
+		return 24, nil
+	case PtiUDE:
+		if nAvail < 16 {
+			return 0, err
+		}
+
+		ude := binary.LittleEndian.Uint64(by[8:16])
+		ucount := int64(ude & KeepLow43Bits)
+		return 16 + ucount, nil
+
+	default:
+		panic(fmt.Sprintf("unrecog pti: %v", pti))
+	}
+}
+
+var FrameTooLargeErr = fmt.Errorf("frame was larger than FrameReader's maximum")
+
+// reads the next frame and returns the number of bytes on the wire
+// used by the frame. Returns a nil *Frame and nbytes of 0 if err is not nil.
+func (fr *FrameReader) NextFrame() (frame *Frame, nbytes int64, err error) {
+	need, err := fr.PeekNextFrame()
+	if err != nil {
+		return nil, 0, err
+	}
+	if need > fr.maxFrameBytes {
+		return nil, 0, FrameTooLargeErr
+	}
+	if need == 0 {
+		return nil, 0, io.EOF
+	}
+
+	// read 'need' number of bytes, or get an IO error
+	var got int64
+	var m int
+	for got != need {
+		m, err = fr.r.Read(fr.by[got:need])
+		got += int64(m)
+		if got == need {
+			err = nil
+			break
+		}
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	var f Frame
+	_, err = f.Unmarshal(fr.by[:need])
+	if err != nil {
+		return nil, 0, err
+	}
+	return &f, need, nil
+}
+
+// pretty print the names of the events into a string
+func (e Evtnum) String() string {
+	switch e {
+	case EvErr:
+		return "EvErr"
+	case EvZero:
+		return "EvZero"
+	case EvOne:
+		return "EvOne"
+	case EvOneFloat64:
+		return "EvOneFloat64"
+	case EvTwo64:
+		return "EvTwo64"
+	case EvNull:
+		return "EvNull"
+	case EvNA:
+		return "EvNA"
+	case EvNaN:
+		return "EvNaN"
+	case EvUDE:
+		return "EvUDE"
+	case EvHeader:
+		return "EvHeader"
+	case EvMsgpack:
+		return "EvMsgpack"
+	case EvBinc:
+		return "EvBinc"
+	case EvCapnp:
+		return "EvCapnp"
+	case EvZygo:
+		return "EvZygo"
+	case EvUtf8:
+		return "EvUtf8"
+	case EvJson:
+		return "EvJson"
+	case EvMsgpKafka:
+		return "EvMsgpKafka"
+	}
+	return "unknown-Evtnum"
+}
+
+func (f *Frame) String() string {
+	tmu := f.GetTm()
+	tm := time.Unix(0, tmu)
+	evtnum := f.GetEvtnum()
+	ulen := f.GetUlen()
+
+	s := fmt.Sprintf("TMFRAME %v EVTNUM %v [%v bytes] (UCOUNT %d)", tm.Format(time.RFC3339Nano), evtnum, f.NumBytes(), ulen)
+
+	pti := f.GetPTI()
+
+	switch pti {
+	case PtiOneFloat64:
+		s += fmt.Sprintf(" V0:%v", f.V0)
+	case PtiTwo64:
+		s += fmt.Sprintf(" V0:%v V1:%v", f.V0, f.V1)
+	}
+	// don't print the data; that is usually application specific.
+	return s
 }
