@@ -73,7 +73,8 @@ nextfile:
 			fmt.Printf("%v", frame)
 			evtnum := frame.GetEvtnum()
 			if evtnum == tf.EvJson {
-				fmt.Printf("  %s", string(frame.Data))
+				pp := prettyPrintJson(cfg.PrettyPrint, frame.Data)
+				fmt.Printf("  %s", string(pp))
 			}
 			if evtnum == tf.EvMsgpKafka || evtnum == tf.EvMsgpack {
 				// decode msgpack to json with ugorji/go/codec
@@ -89,20 +90,25 @@ nextfile:
 				enc := codec.NewEncoder(&w, &msgpHelper.jh)
 				err = enc.Encode(&iface)
 				panicOn(err)
-				if cfg.PrettyPrint {
-					var prettyBB bytes.Buffer
-					jsErr := json.Indent(&prettyBB, w.Bytes(), "      ", "    ")
-					if jsErr != nil {
-						fmt.Printf(" %s", string(w.Bytes()))
-					} else {
-						fmt.Printf(" %s", string(prettyBB.Bytes()))
-					}
-				} else {
-					fmt.Printf(" %s", string(w.Bytes()))
-				}
+				pp := prettyPrintJson(cfg.PrettyPrint, w.Bytes())
+				fmt.Printf(" %s", string(pp))
 			}
 			fmt.Printf("\n")
 		}
+	}
+}
+
+func prettyPrintJson(doPretty bool, input []byte) []byte {
+	if doPretty {
+		var prettyBB bytes.Buffer
+		jsErr := json.Indent(&prettyBB, input, "      ", "    ")
+		if jsErr != nil {
+			return input
+		} else {
+			return prettyBB.Bytes()
+		}
+	} else {
+		return input
 	}
 }
 
