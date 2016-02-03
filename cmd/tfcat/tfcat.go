@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	tf "github.com/glycerine/tmframe"
@@ -23,6 +24,8 @@ func usage(err error, myflags *flag.FlagSet) {
 	os.Exit(1)
 }
 
+var GlobalPrettyPrint bool
+
 func main() {
 	myflags := flag.NewFlagSet("tfcat", flag.ExitOnError)
 	cfg := &TfcatConfig{}
@@ -41,6 +44,7 @@ func main() {
 		showUse(myflags)
 		os.Exit(1)
 	}
+	GlobalPrettyPrint = cfg.PrettyPrint
 
 	i := int64(0)
 nextfile:
@@ -85,7 +89,17 @@ nextfile:
 				enc := codec.NewEncoder(&w, &msgpHelper.jh)
 				err = enc.Encode(&iface)
 				panicOn(err)
-				fmt.Printf(" %s", string(w.Bytes()))
+				if cfg.PrettyPrint {
+					var prettyBB bytes.Buffer
+					jsErr := json.Indent(&prettyBB, w.Bytes(), "      ", "    ")
+					if jsErr != nil {
+						fmt.Printf(" %s", string(w.Bytes()))
+					} else {
+						fmt.Printf(" %s", string(prettyBB.Bytes()))
+					}
+				} else {
+					fmt.Printf(" %s", string(w.Bytes()))
+				}
 			}
 			fmt.Printf("\n")
 		}
@@ -167,10 +181,10 @@ type JsonBytesAsStringExt struct{}
 //func (x JsonBytesAsStringExt) WriteExt(interface{}) []byte { panic("unsupported") }
 //func (x JsonBytesAsStringExt) ReadExt(interface{}, []byte) { panic("unsupported") }
 func (x JsonBytesAsStringExt) ConvertExt(v interface{}) interface{} {
-	Q("in JsonBytesAsStringExt.ConvertExt(): v is %T/val=%#v", v, v)
+	//P("in JsonBytesAsStringExt.ConvertExt(): v is %T/val='%#v'", v, v)
 	switch v2 := v.(type) {
 	case []byte:
-		Q("v2 is []byte")
+		//Q("v2 is []byte")
 		return string(v2)
 	default:
 		panic(fmt.Sprintf("unsupported format for JsonBytesAsStringExt conversion: expecting []byte; got %T", v))
@@ -178,7 +192,7 @@ func (x JsonBytesAsStringExt) ConvertExt(v interface{}) interface{} {
 	return v
 }
 func (x JsonBytesAsStringExt) UpdateExt(dest interface{}, v interface{}) {
-	Q("in JsonBytesAsStringExt.UpdateExt(): v is %T/val=%#v    dest is %T/val=%#v", v, v, dest, dest)
+	//Q("in JsonBytesAsStringExt.UpdateExt(): v is %T/val=%#v    dest is %T/val=%#v", v, v, dest, dest)
 
 	tt := dest.(*[]byte)
 	switch v2 := v.(type) {
