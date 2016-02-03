@@ -12,11 +12,14 @@ import (
 	"time"
 )
 
+func showUse(myflags *flag.FlagSet) {
+	fmt.Fprintf(os.Stderr, "%s displays TMFRAME files. Usage: %s {-p} <file1> <file2> ...\n", os.Args[0], os.Args[0])
+	myflags.PrintDefaults()
+}
+
 func usage(err error, myflags *flag.FlagSet) {
 	fmt.Fprintf(os.Stderr, "%s\n", err)
-
-	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-	myflags.PrintDefaults()
+	showUse(myflags)
 	os.Exit(1)
 }
 
@@ -32,9 +35,17 @@ func main() {
 	}
 
 	leftover := myflags.Args()
-	Q("leftover = %v", leftover)
+	//Q("leftover = %v", leftover)
+	if len(leftover) == 0 {
+		fmt.Fprintf(os.Stderr, "no input files given\n")
+		showUse(myflags)
+		os.Exit(1)
+	}
 
+	i := int64(0)
+nextfile:
 	for _, inputFile := range leftover {
+		//P("starting on inputFile '%s'", inputFile)
 		if !FileExists(inputFile) {
 			fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputFile)
 			os.Exit(1)
@@ -46,16 +57,16 @@ func main() {
 
 		var frame *tf.Frame
 
-		for i := int64(0); err == nil; i++ {
+		for ; err == nil; i++ {
 			frame, _, err = fr.NextFrame()
 			if err != nil {
 				if err == io.EOF {
-					return
+					continue nextfile
 				}
-				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
+				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			fmt.Printf("%06d: %v", i, frame)
+			fmt.Printf("%v", frame)
 			evtnum := frame.GetEvtnum()
 			if evtnum == tf.EvJson {
 				fmt.Printf("  %s", string(frame.Data))
@@ -68,7 +79,7 @@ func main() {
 				err := dec.Decode(&iface)
 				panicOn(err)
 
-				Q("iface = '%#v'", iface)
+				//Q("iface = '%#v'", iface)
 
 				var w bytes.Buffer
 				enc := codec.NewEncoder(&w, &msgpHelper.jh)
