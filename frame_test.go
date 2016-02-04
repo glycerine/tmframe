@@ -179,9 +179,9 @@ i=-4611686018427387904  top 21 bits: -524288
 i=-9223372036854775808  top 21 bits: -1048576
 */
 func signed_right_shift_demo() {
-	b := -1 << 43
-	e := -1
-	for i := b; i < e; i = i << 1 {
+	b := int64(-1 << 43)
+	e := int64(-1)
+	for i := int64(b); i < e; i = i << 1 {
 		fmt.Printf("i=%v  top 21 bits: %v\n", i, int32(i>>43))
 	}
 }

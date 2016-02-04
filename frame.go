@@ -267,7 +267,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	default:
 		panic(fmt.Sprintf("unrecog pti: %v", pti))
 	}
-	panic("should never get here")
+	// panic("should never get here")
 }
 
 // KeepLow43Bits allows one to mask off a UDE and discover
