@@ -137,8 +137,9 @@ func init() {
 }
 
 // NumBytes returns the number of bytes that the
-// serialized Frame will consume on the wire. It
-// will be at least 8, and at most 8 + 2^43
+// serialized Frame will consume on the wire. The
+// count will be at least 8 bytes, and at most
+// 16 + 2^43 bytes (which is 16 bytes + 8TB).
 func (f *Frame) NumBytes() int64 {
 	n := int64(8)
 	pti := f.GetPTI()
@@ -280,6 +281,10 @@ const KeepLow43Bits uint64 = 0x000007FFFFFFFFFF
 // evtnum specified.
 var NoDataAllowedErr = fmt.Errorf("data must be empty for this evtnum")
 
+// DataTooBigErr is returned from NewFrame() if the
+// user tries to submit more than 2^43 -1 bytes of data.
+var DataTooBigErr = fmt.Errorf("data cannot be over 8TB - 1 byte")
+
 // EvtnumOutOfRangeErr is retuned from NewFrame() when
 // the evtnum is out of the allowed range.
 var EvtnumOutOfRangeErr = fmt.Errorf("evtnum out of range. min allowed is -1048576, max is 1048575")
@@ -303,6 +308,10 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 
 	if !ValidEvtnum(evtnum) {
 		return nil, EvtnumOutOfRangeErr
+	}
+
+	if len(data) > (2^43)-1 {
+		return nil, DataTooBigErr
 	}
 
 	// sanity check that data is empty when it should be
