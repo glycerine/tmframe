@@ -310,7 +310,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 		return nil, EvtnumOutOfRangeErr
 	}
 
-	if len(data) > (2^43)-1 {
+	if len(data) > (1<<43)-1 {
 		return nil, DataTooBigErr
 	}
 
