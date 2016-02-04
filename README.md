@@ -78,7 +78,7 @@ c) primary word + UDE word + variable byte-length message:
 
 There are also two special payload types that are not UDE based.
 They handle the common case of attaching one or two
-float64 values to a timestamp.
+64-bit values to a timestamp.
 
 d) primary word + one float64
 
