@@ -57,7 +57,7 @@ func main() {
 		return
 	}
 
-	i := int64(0)
+	i := int64(1)
 nextfile:
 	for _, inputFile := range leftover {
 		//P("starting on inputFile '%s'", inputFile)
@@ -81,14 +81,14 @@ nextfile:
 				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			DisplayFrame(frame, cfg)
+			DisplayFrame(frame, cfg, i)
 		}
 	}
 }
 
-func DisplayFrame(frame *tf.Frame, cfg *TfcatConfig) {
+func DisplayFrame(frame *tf.Frame, cfg *TfcatConfig, i int64) {
 
-	fmt.Printf("%v", frame)
+	fmt.Printf("%06d %v", i, frame)
 	if !cfg.SkipPayload {
 		evtnum := frame.GetEvtnum()
 		if evtnum == tf.EvJson {
@@ -252,6 +252,7 @@ func FollowFile(path string, cfg *TfcatConfig) {
 
 	var frame *tf.Frame
 
+	i := int64(1)
 nextFrame:
 	for {
 		frame, _, err = fr.NextFrame()
@@ -267,6 +268,7 @@ nextFrame:
 			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
 			os.Exit(1)
 		}
-		DisplayFrame(frame, cfg)
+		DisplayFrame(frame, cfg, i)
+		i++
 	}
 }
