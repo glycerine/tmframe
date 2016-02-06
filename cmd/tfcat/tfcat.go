@@ -15,7 +15,7 @@ import (
 )
 
 func showUse(myflags *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, "%s displays TMFRAME files. Usage: %s {-p} {-s} <file1> <file2> ...\n", os.Args[0], os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s displays TMFRAME files. Usage: %s {-p} {-s} {-f} <file1> <file2> ...\n", os.Args[0], os.Args[0])
 	myflags.PrintDefaults()
 }
 
