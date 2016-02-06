@@ -558,7 +558,7 @@ func (e Evtnum) String() string {
 
 func (f *Frame) String() string {
 	tmu := f.GetTm()
-	tm := time.Unix(0, tmu)
+	tm := time.Unix(0, tmu).UTC()
 	evtnum := f.GetEvtnum()
 	ulen := f.GetUlen()
 

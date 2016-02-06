@@ -7,6 +7,7 @@ import (
 	"fmt"
 	tf "github.com/glycerine/tmframe"
 	"github.com/ugorji/go/codec"
+	fsnotify "gopkg.in/fsnotify.v1"
 	"io"
 	"os"
 	"reflect"
@@ -46,6 +47,16 @@ func main() {
 	}
 	GlobalPrettyPrint = cfg.PrettyPrint
 
+	if cfg.Follow {
+		if len(leftover) != 1 {
+			fmt.Fprintf(os.Stderr, "can only follow a single file\n")
+			showUse(myflags)
+			os.Exit(1)
+		}
+		FollowFile(leftover[0], cfg)
+		return
+	}
+
 	i := int64(0)
 nextfile:
 	for _, inputFile := range leftover {
@@ -70,34 +81,39 @@ nextfile:
 				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			fmt.Printf("%v", frame)
-			if !cfg.SkipPayload {
-				evtnum := frame.GetEvtnum()
-				if evtnum == tf.EvJson {
-					pp := prettyPrintJson(cfg.PrettyPrint, frame.Data)
-					fmt.Printf("  %s", string(pp))
-				}
-				if evtnum == tf.EvMsgpKafka || evtnum == tf.EvMsgpack {
-					// decode msgpack to json with ugorji/go/codec
-
-					var iface interface{}
-					dec := codec.NewDecoderBytes(frame.Data, &msgpHelper.mh)
-					err := dec.Decode(&iface)
-					panicOn(err)
-
-					//Q("iface = '%#v'", iface)
-
-					var w bytes.Buffer
-					enc := codec.NewEncoder(&w, &msgpHelper.jh)
-					err = enc.Encode(&iface)
-					panicOn(err)
-					pp := prettyPrintJson(cfg.PrettyPrint, w.Bytes())
-					fmt.Printf(" %s", string(pp))
-				}
-			}
-			fmt.Printf("\n")
+			DisplayFrame(frame, cfg)
 		}
 	}
+}
+
+func DisplayFrame(frame *tf.Frame, cfg *TfcatConfig) {
+
+	fmt.Printf("%v", frame)
+	if !cfg.SkipPayload {
+		evtnum := frame.GetEvtnum()
+		if evtnum == tf.EvJson {
+			pp := prettyPrintJson(cfg.PrettyPrint, frame.Data)
+			fmt.Printf("  %s", string(pp))
+		}
+		if evtnum == tf.EvMsgpKafka || evtnum == tf.EvMsgpack {
+			// decode msgpack to json with ugorji/go/codec
+
+			var iface interface{}
+			dec := codec.NewDecoderBytes(frame.Data, &msgpHelper.mh)
+			err := dec.Decode(&iface)
+			panicOn(err)
+
+			//Q("iface = '%#v'", iface)
+
+			var w bytes.Buffer
+			enc := codec.NewEncoder(&w, &msgpHelper.jh)
+			err = enc.Encode(&iface)
+			panicOn(err)
+			pp := prettyPrintJson(cfg.PrettyPrint, w.Bytes())
+			fmt.Printf(" %s", string(pp))
+		}
+	}
+	fmt.Printf("\n")
 }
 
 func prettyPrintJson(doPretty bool, input []byte) []byte {
@@ -210,4 +226,47 @@ func (x JsonBytesAsStringExt) UpdateExt(dest interface{}, v interface{}) {
 		panic(fmt.Sprintf("unsupported format for JsonBytesAsStringExt conversion: expecting []byte; got %T", v))
 	}
 
+}
+
+func FollowFile(path string, cfg *TfcatConfig) {
+
+	if !FileExists(path) {
+		fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", path)
+		os.Exit(1)
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	panicOn(err)
+	defer watcher.Close()
+
+	f, err := os.Open(path)
+	panicOn(err)
+	// move to end for tailing
+	_, err = f.Seek(0, 2)
+	panicOn(err)
+
+	err = watcher.Add(path)
+	panicOn(err)
+
+	fr := tf.NewFrameReader(f, 1024*1024)
+
+	var frame *tf.Frame
+
+nextFrame:
+	for {
+		frame, _, err = fr.NextFrame()
+		if err != nil {
+			if err == io.EOF {
+				select {
+				case event := <-watcher.Events:
+					if event.Op&fsnotify.Write == fsnotify.Write {
+						continue nextFrame
+					}
+				}
+			}
+			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
+			os.Exit(1)
+		}
+		DisplayFrame(frame, cfg)
+	}
 }
