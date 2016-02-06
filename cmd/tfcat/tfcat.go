@@ -14,7 +14,7 @@ import (
 )
 
 func showUse(myflags *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, "%s displays TMFRAME files. Usage: %s {-p} <file1> <file2> ...\n", os.Args[0], os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s displays TMFRAME files. Usage: %s {-p} {-s} <file1> <file2> ...\n", os.Args[0], os.Args[0])
 	myflags.PrintDefaults()
 }
 
@@ -71,27 +71,29 @@ nextfile:
 				os.Exit(1)
 			}
 			fmt.Printf("%v", frame)
-			evtnum := frame.GetEvtnum()
-			if evtnum == tf.EvJson {
-				pp := prettyPrintJson(cfg.PrettyPrint, frame.Data)
-				fmt.Printf("  %s", string(pp))
-			}
-			if evtnum == tf.EvMsgpKafka || evtnum == tf.EvMsgpack {
-				// decode msgpack to json with ugorji/go/codec
+			if !cfg.SkipPayload {
+				evtnum := frame.GetEvtnum()
+				if evtnum == tf.EvJson {
+					pp := prettyPrintJson(cfg.PrettyPrint, frame.Data)
+					fmt.Printf("  %s", string(pp))
+				}
+				if evtnum == tf.EvMsgpKafka || evtnum == tf.EvMsgpack {
+					// decode msgpack to json with ugorji/go/codec
 
-				var iface interface{}
-				dec := codec.NewDecoderBytes(frame.Data, &msgpHelper.mh)
-				err := dec.Decode(&iface)
-				panicOn(err)
+					var iface interface{}
+					dec := codec.NewDecoderBytes(frame.Data, &msgpHelper.mh)
+					err := dec.Decode(&iface)
+					panicOn(err)
 
-				//Q("iface = '%#v'", iface)
+					//Q("iface = '%#v'", iface)
 
-				var w bytes.Buffer
-				enc := codec.NewEncoder(&w, &msgpHelper.jh)
-				err = enc.Encode(&iface)
-				panicOn(err)
-				pp := prettyPrintJson(cfg.PrettyPrint, w.Bytes())
-				fmt.Printf(" %s", string(pp))
+					var w bytes.Buffer
+					enc := codec.NewEncoder(&w, &msgpHelper.jh)
+					err = enc.Encode(&iface)
+					panicOn(err)
+					pp := prettyPrintJson(cfg.PrettyPrint, w.Bytes())
+					fmt.Printf(" %s", string(pp))
+				}
 			}
 			fmt.Printf("\n")
 		}
