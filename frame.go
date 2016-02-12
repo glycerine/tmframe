@@ -66,8 +66,9 @@ type Frame struct {
 	//GetPTI() PTI   // returns low 3 bits of the primary word
 
 	V0 float64 // primary float64 value, for EvOneFloat64 and EvTwo64
-	V1 int64   // uint64 secondary payload, for EvTwo64
 
+	// Ude alternatively represents V1 for EvTwo64
+	// GetV1() to access as V1.
 	Ude int64 // the User-Defined-Encoding word
 
 	// break down the Ude:
@@ -123,7 +124,7 @@ func (f *Frame) GetV0() float64 {
 
 func (f *Frame) GetV1() int64 {
 	if f.GetPTI() == PtiTwo64 {
-		return f.V1
+		return f.Ude
 	}
 	return 0
 }
@@ -192,7 +193,7 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
 	case PtiTwo64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
-		binary.LittleEndian.PutUint64(m[16:24], uint64(f.V1))
+		binary.LittleEndian.PutUint64(m[16:24], uint64(f.Ude))
 	case PtiUDE:
 		binary.LittleEndian.PutUint64(m[8:16], uint64(f.Ude))
 		if n == 16 {
@@ -243,7 +244,7 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 			return by, TooShortErr
 		}
 		f.V0 = math.Float64frombits(binary.LittleEndian.Uint64(by[8:16]))
-		f.V1 = int64(binary.LittleEndian.Uint64(by[16:24]))
+		f.Ude = int64(binary.LittleEndian.Uint64(by[16:24]))
 		return by[24:], nil
 	case PtiNull:
 		return by[8:], nil
@@ -383,7 +384,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 		f.V0 = v0
 	case EvTwo64:
 		f.V0 = v0
-		f.V1 = v1
+		f.Ude = v1
 	}
 
 	Q("f = %#v", f)
@@ -570,7 +571,7 @@ func (f *Frame) String() string {
 	case PtiOneFloat64:
 		s += fmt.Sprintf(" V0:%v", f.V0)
 	case PtiTwo64:
-		s += fmt.Sprintf(" V0:%v V1:%v", f.V0, f.V1)
+		s += fmt.Sprintf(" V0:%v V1:%v", f.V0, f.Ude)
 	}
 	// don't print the data; that is usually application specific.
 	return s
