@@ -1,4 +1,4 @@
-package frame
+package tm
 
 func panicOn(err error) {
 	if err != nil {

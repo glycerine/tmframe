@@ -2,7 +2,7 @@
 See https://github.com/glycerine/tmframe for the specification of the TMFRAME
 format which we implement here.
 */
-package frame
+package tm
 
 import (
 	"bufio"
