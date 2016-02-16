@@ -65,8 +65,9 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 
 		sers := NewSeriesFromFrames(testFrames)
 		at, status := sers.InForceBefore(tms[2])
+		P("at, status = %v, %v", at, status)
 		cv.So(status, cv.ShouldEqual, Avail)
-		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldEqual, tms[1])
+		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[1])
 		/*testFrames, tms, by := GenTestFrames(5, &outpath)
 		P("by=%#v", by)
 		ring := NewFrameRing(5)
