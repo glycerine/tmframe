@@ -6,6 +6,7 @@ package tm
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -62,7 +63,7 @@ const (
 // Frame holds a fully parsed TMFRAME message.
 type Frame struct {
 	Prim int64 // the primary word
-	//GetTm()  int64 // returns low 3 bits all zeros, nanoseconds since unix epoch.
+	//Tm()  int64 // returns low 3 bits all zeros, nanoseconds since unix epoch.
 	//GetPTI() PTI   // returns low 3 bits of the primary word
 
 	V0 float64 // primary float64 value, for EvOneFloat64 and EvTwo64
@@ -78,8 +79,19 @@ type Frame struct {
 	Data []byte // the variable length payload after the UDE
 }
 
-func (f *Frame) GetTm() int64 {
+// extract and return the Prim timestamp from the frame (this is a UnixNano nanosecond timestamp, with the low 3 bits zeroed).
+func (f *Frame) Tm() int64 {
 	return f.Prim &^ 7
+}
+
+// convert from a time.Time to a frame.Tm() comparable timestamp
+func TimeToPrimTm(t time.Time) int64 {
+	return t.UnixNano() &^ 7
+}
+
+// convert from a UnixNano timestamp (int64 number of nanoseconds) to a frame.Tm() comparable timestamp
+func IntToPrimTm(t int64) int64 {
+	return t &^ 7
 }
 
 func (f *Frame) GetPTI() PTI {
@@ -215,7 +227,9 @@ var TooShortErr = fmt.Errorf("data supplied is too short to represent a TMFRAME 
 // in the by []byte data.
 func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 	// zero it all
-	*f = Frame{}
+	f.V0 = 0
+	f.Ude = 0
+	f.Data = []byte{}
 
 	n := int64(len(by))
 	if n < 8 {
@@ -479,9 +493,11 @@ func (fr *FrameReader) PeekNextFrame() (nBytes int64, err error) {
 
 var FrameTooLargeErr = fmt.Errorf("frame was larger than FrameReader's maximum")
 
-// reads the next frame and returns the number of bytes on the wire
-// used by the frame. Returns a nil *Frame and nbytes of 0 if err is not nil.
-func (fr *FrameReader) NextFrame() (frame *Frame, nbytes int64, err error) {
+// NextFrame reads the next frame into fillme if provided. If fillme is
+// null it allocates a new Frame. NextFrame returns a pointer to the filled
+// frame, along with the number of bytes on the wire used by the frame.
+// Returns a nil *Frame and nbytes of 0 if err is not nil.
+func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err error) {
 	need, err := fr.PeekNextFrame()
 	if err != nil {
 		return nil, 0, err
@@ -557,8 +573,8 @@ func (e Evtnum) String() string {
 	return "unknown-Evtnum"
 }
 
-func (f *Frame) String() string {
-	tmu := f.GetTm()
+func (f Frame) String() string {
+	tmu := f.Tm()
 	tm := time.Unix(0, tmu).UTC()
 	evtnum := f.GetEvtnum()
 	ulen := f.GetUlen()
@@ -575,4 +591,14 @@ func (f *Frame) String() string {
 	}
 	// don't print the data; that is usually application specific.
 	return s
+}
+
+// FramesEqual calls Marshal() both frames a and b and returns returns
+// true if that are byte-for-byte identical. Panics if there is a marshaling error.
+func FramesEqual(a, b *Frame) bool {
+	abuf, err := a.Marshal(nil)
+	panicOn(err)
+	bbuf, err := b.Marshal(nil)
+	panicOn(err)
+	return 0 == bytes.Compare(abuf, bbuf)
 }

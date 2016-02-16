@@ -70,10 +70,10 @@ nextfile:
 		panicOn(err)
 		fr := tf.NewFrameReader(f, 1024*1024)
 
-		var frame *tf.Frame
+		var frame tf.Frame
 
 		for ; err == nil; i++ {
-			frame, _, err = fr.NextFrame()
+			_, _, err = fr.NextFrame(&frame)
 			if err != nil {
 				if err == io.EOF {
 					continue nextfile
