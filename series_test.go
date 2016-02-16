@@ -68,15 +68,17 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		P("at, status = %v, %v", at, status)
 		cv.So(status, cv.ShouldEqual, Avail)
 		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[1])
-		/*testFrames, tms, by := GenTestFrames(5, &outpath)
-		P("by=%#v", by)
-		ring := NewFrameRing(5)
-		for i := range testFrames {
-			//ring.Add(testFrames[i])
-		}
-		*/
-		P("\n tms:%#v  \n\n testFrames:%#v \n\n", tms, testFrames)
-		//cv.So(x.SexpString(), cv.ShouldEqual, ` (snoopy chld: (hellcat speed:567))`)
+
+		at, status = sers.InForceBefore(tms[4].Add(time.Hour))
+		P("at, status = %v, %v", at, status)
+		cv.So(status, cv.ShouldEqual, InFuture)
+		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[4])
+
+		at, status = sers.InForceBefore(tms[0])
+		P("at, status = %v, %v", at, status)
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(at, cv.ShouldEqual, nil)
+
 	})
 }
 

@@ -1,9 +1,9 @@
 package tm
 
 import (
+	"fmt"
 	"sort"
 	"time"
-	//"github.com/glycerine/rbuf"
 )
 
 type Series struct {
@@ -23,8 +23,20 @@ type SearchStatus int
 const (
 	InPast   SearchStatus = 0
 	Avail    SearchStatus = 1
-	InFuture SearchStatus = 1
+	InFuture SearchStatus = 2
 )
+
+func (s SearchStatus) String() string {
+	switch s {
+	case InPast:
+		return "InPast"
+	case Avail:
+		return "Avail"
+	case InFuture:
+		return "Future"
+	}
+	panic(fmt.Sprintf("unknown SearchStatus %v", s))
+}
 
 // If tm is greater than any seen Frame, InForceBefore()
 // will return the last seen Frame and a SearchStatus of InFuture.
