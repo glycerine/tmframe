@@ -71,7 +71,7 @@ func (s SearchStatus) String() string {
 // In summary:
 //
 // LastInForceBefore(): looking at the ties for the nearest timestamp s < tm, return
-// the most recent (last in chronological order) of these ties at s. Nearest means
+// the most recent (last in the presented sequence order) of these ties at s. Nearest means
 // that there is no other timestamp r such that s < r < tm.
 func (s *Series) LastInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
@@ -95,7 +95,7 @@ func (s *Series) LastInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 }
 
 // FirstInForceBefore(): looking at the ties for the nearest timestamp s < tm, return
-// the earliest (first in chronological order) of these ties at s. Nearest means
+// the earliest (first in the presented sequence order) of these ties at s. Nearest means
 // that there is no other timestamp r such that s < r < tm.
 func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
@@ -151,7 +151,7 @@ func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 }
 
 // FirstAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
-// the earliest (first in chronological order) of these ties at s.  Nearest means
+// the earliest (first in the presented sequence order) of these ties at s.  Nearest means
 // that there is no other timestamp r such that s <= r <= tm.
 func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
@@ -196,7 +196,7 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 }
 
 // LastAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
-// the newest (last in chronological order) of these ties at timestamp s.  Nearest means
+// the newest (last in the presented sequence order) of these ties at timestamp s.  Nearest means
 // that there is no other timestamp r such that s <= r <= tm.
 func (s *Series) LastAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
