@@ -140,7 +140,7 @@ func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	// Search foward to the last Frame at itm.
 	// For worst case efficiency of O(log(n)), rather
 	// than O(n), use Search() again to
-	// find the smallest index such that Tm > itm,
+	// find the smallest index such that Tm >= itm,
 	// then subtract 1.
 	k := sort.Search(m, func(i int) bool {
 		return s.Frames[i].Tm() >= jtm
@@ -172,7 +172,7 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 		// Need to search back to the first Frame at rtm.
 		// For worst case efficiency of O(log(n)), rather
 		// than O(n), use Search() again to
-		// find the smallest index such that Tm == rtm.
+		// find the smallest index such that Tm >= rtm.
 		k := sort.Search(m, func(i int) bool {
 			return s.Frames[i].Tm() >= rtm
 		})
