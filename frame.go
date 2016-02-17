@@ -607,7 +607,8 @@ func (f Frame) String() string {
 }
 
 // FramesEqual calls Marshal() both frames a and b and returns returns
-// true if that are byte-for-byte identical. Panics if there is a marshaling error.
+// true if the serialized versions of a and b are byte-for-byte identical.
+// FramesEqual will panics if there is a marshaling error.
 func FramesEqual(a, b *Frame) bool {
 	abuf, err := a.Marshal(nil)
 	panicOn(err)
