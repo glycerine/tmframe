@@ -346,12 +346,12 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	mod := utm - (utm % 8)
 
 	en := uint64(evtnum % (1 << 21))
-	Q("en = %v", en)
-	Q("pre shift en = %b", en)
+	q("en = %v", en)
+	q("pre shift en = %b", en)
 	en = en << 43
-	Q("post shift en = %b", en)
-	Q("len(data) = %v", len(data))
-	Q("len(data) = %b", len(data))
+	q("post shift en = %b", en)
+	q("len(data) = %v", len(data))
+	q("len(data) = %b", len(data))
 	var ude uint64
 	if len(data) > 0 {
 		// the +1 is so we zero-terminate strings -- for C bindings
@@ -359,7 +359,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	} else {
 		ude = en
 	}
-	Q("ude = %b", ude)
+	q("ude = %b", ude)
 
 	var useData []byte
 	var myUDE uint64
@@ -407,7 +407,7 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 		f.Ude = v1
 	}
 
-	Q("f = %#v", f)
+	q("f = %#v", f)
 	return f, nil
 }
 

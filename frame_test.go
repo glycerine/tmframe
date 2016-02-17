@@ -30,7 +30,7 @@ func TestParsingTMFRAME(t *testing.T) {
 		cv.So(frame.Prim, cv.ShouldEqual, frame.Tm()|int64(pti))
 		by, err := frame.Marshal(nil)
 		panicOn(err)
-		Q("by = '%v'", string(by))
+		q("by = '%v'", string(by))
 
 		var frame2 Frame
 		frame2.Unmarshal(by)
@@ -43,7 +43,7 @@ func TestParsingTMFRAME(t *testing.T) {
 		x := []int{-1048576, 1048575, 1048574, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 		for _, ev := range x {
-			Q("ev = %v", ev)
+			q("ev = %v", ev)
 			tm := time.Now()
 			msg := []byte("fake msg")
 			if ev >= 0 && ev < 7 {
@@ -64,22 +64,22 @@ func TestParsingTMFRAME(t *testing.T) {
 				cv.So(frame.GetUlen(), cv.ShouldEqual, len(frame.Data)+1)
 				cv.So(frame.GetPTI(), cv.ShouldEqual, PtiUDE)
 			} else {
-				Q(" ev = %v", ev)
+				q(" ev = %v", ev)
 				pti = PTI(ev)
 				cv.So(frame.GetPTI(), cv.ShouldEqual, ev)
 				cv.So(frame.Prim, cv.ShouldEqual, frame.Tm()|int64(pti))
 			}
 			by, err := frame.Marshal(nil)
 			panicOn(err)
-			Q("by = '%v'", string(by))
+			q("by = '%v'", string(by))
 
 			var frame2 Frame
 			frame2.Unmarshal(by)
 			cv.So(FramesEqual(&frame2, frame), cv.ShouldBeTrue)
-			Q("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
+			q("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
 			cv.So(frame2.GetEvtnum(), cv.ShouldEqual, ev)
-			Q("frame2.Tm = %v", time.Unix(0, frame2.Tm()))
-			Q("tm = %v", tm)
+			q("frame2.Tm = %v", time.Unix(0, frame2.Tm()))
+			q("tm = %v", tm)
 		}
 	})
 
@@ -111,7 +111,7 @@ func TestUDEwithZeroDataOkay(t *testing.T) {
 				cv.So(frame.Ude, cv.ShouldNotEqual, 0)
 				by, err := frame.Marshal(nil)
 				panicOn(err)
-				Q("ev = %v", ev)
+				q("ev = %v", ev)
 				cv.So(len(by), cv.ShouldEqual, 16)
 			}
 
@@ -194,7 +194,7 @@ func Test200FrameReader(t *testing.T) {
 		var err error
 		//var by []byte
 
-		P("FrameReader.ReadNextFrame() should return io.EOF or empty []byte / stream at end of file")
+		p("FrameReader.ReadNextFrame() should return io.EOF or empty []byte / stream at end of file")
 		var empty bytes.Buffer
 		fr := NewFrameReader(&empty, 64*1024)
 		nBytes, err := fr.PeekNextFrame()
@@ -204,7 +204,7 @@ func Test200FrameReader(t *testing.T) {
 		//		cv.So(len(by), cv.ShouldEqual, 0)
 		//		cv.So(err, cv.ShouldEqual, io.EOF)
 
-		P("FrameReader.PeekNextFrame() should return the size without consuming the Frame")
+		p("FrameReader.PeekNextFrame() should return the size without consuming the Frame")
 		f8, err := NewFrame(tm, EvZero, 0, 0, nil)
 		panicOn(err)
 		b8, err := f8.Marshal(nil)

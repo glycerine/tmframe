@@ -87,7 +87,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		cv.So(at.GetV0(), cv.ShouldEqual, 1)
 		cv.So(i, cv.ShouldEqual, 1)
 
-		P("FristInForceBefore InFuture test")
+		p("FristInForceBefore InFuture test")
 		at, status, i = sers.FirstInForceBefore(tms[4].Add(time.Hour))
 		cv.So(status, cv.ShouldEqual, InFuture)
 		cv.So(at.GetV0(), cv.ShouldEqual, 4)
@@ -126,7 +126,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 			cv.So(at.GetV0(), cv.ShouldEqual, 0)
 			cv.So(i, cv.ShouldEqual, 0)
 
-			P("FristAtOrBefore InFuture test")
+			p("FristAtOrBefore InFuture test")
 			at, status, i = sers.FirstAtOrBefore(tms[0].Add(time.Hour))
 			cv.So(status, cv.ShouldEqual, InFuture)
 			cv.So(at.GetV0(), cv.ShouldEqual, 0)
@@ -161,7 +161,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 			cv.So(at.GetV0(), cv.ShouldEqual, 4)
 			cv.So(i, cv.ShouldEqual, 4)
 
-			P("LastAtOrBefore InFuture test")
+			p("LastAtOrBefore InFuture test")
 			at, status, i = sers.LastAtOrBefore(base.Add(time.Hour))
 			cv.So(status, cv.ShouldEqual, InFuture)
 			cv.So(at.GetV0(), cv.ShouldEqual, 4)
