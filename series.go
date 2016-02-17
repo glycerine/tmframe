@@ -1,3 +1,14 @@
+//
+// Search functions:
+//
+// FirstInForceBefore(), LastInForceBefore(),
+// FirstAtOrBefore(), and LastAtOrBefore()
+// provide searching functionality for through a
+// timeseries that may have duplicated timestamps.
+//
+// See the LastInForceBefore() for the most detailed
+// description.
+//
 package tm
 
 import (
@@ -6,10 +17,12 @@ import (
 	"time"
 )
 
+// Series represents a set of sequential Frames in a timeseries.
 type Series struct {
 	Frames []*Frame
 }
 
+// create a new Series from a set of Frame pointers
 func NewSeriesFromFrames(fr []*Frame) *Series {
 	s := &Series{
 		Frames: fr,
@@ -26,6 +39,7 @@ const (
 	InFuture SearchStatus = 2
 )
 
+// Stringify the SearchStatus, for printing.
 func (s SearchStatus) String() string {
 	switch s {
 	case InPast:
@@ -38,22 +52,25 @@ func (s SearchStatus) String() string {
 	panic(fmt.Sprintf("unknown SearchStatus %v", s))
 }
 
-// FirstInForceBefore(), LastInForceBefore(),
-// FirstAtOrBefore(), and LastAtOrBefore()
-// provide searching functionality for through a
-// timeseries that may have duplicated timestamps.
-//
 // LastInForceBefore():
 //
-// If tm is greater than any seen Frame, InForceBefore()
+// If tm is greater than any seen Frame, LastInForceBefore()
 // will return the last seen Frame and a SearchStatus of InFuture.
+//
 // If tm is smaller than the oldest Frame available,
-// InForceBefore will return (nil, InPast). Otherwise,
+// LastInForceBefore will return (nil, InPast). Otherwise,
 // it returns the Frame where Frame.Tm() is strictly before
 // the tm (using 10 nanosecond resolution; truncating tm using
-// the TimeToPrimTm(tm) function. The 3rd return argument
-// is the integer index of the returned frame, or -1 if
-// SearchStatus is InPast.
+// the TimeToPrimTm(tm) function.
+//
+// The 3rd returned argument provides the integer index of
+// the returned frame in s.Frames, or -1 if SearchStatus is InPast.
+//
+// In summary:
+//
+// LastInForceBefore(): looking at the ties for the nearest timestamp s < tm, return
+// the most recent (last in chronological order) of these ties at s. Nearest means
+// that there is no other timestamp r such that s < r < tm.
 func (s *Series) LastInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
@@ -75,8 +92,9 @@ func (s *Series) LastInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	return s.Frames[i-1], Avail, i - 1
 }
 
-// Like LastInForceBefore(), but if there are ties we return
-// the first in the sequence of tied timestamp Frames.
+// FirstInForceBefore(): looking at the ties for the nearest timestamp s < tm, return
+// the earliest (first in chronological order) of these ties at s. Nearest means
+// that there is no other timestamp r such that s < r < tm.
 func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
@@ -130,6 +148,8 @@ func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	return s.Frames[k], Avail, k
 }
 
+// FirstAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
+// the earliest (first in chronological order) of these ties at s.
 func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
@@ -172,6 +192,8 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	return s.Frames[i-1], Avail, i - 1
 }
 
+// LastAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
+// the newest (last in chronological order) of these ties at timestamp s.
 func (s *Series) LastAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
