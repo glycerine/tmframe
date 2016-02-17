@@ -30,7 +30,10 @@ func NewSeriesFromFrames(fr []*Frame) *Series {
 	return s
 }
 
-// result of searching with JustBefore() and AtOrAfter()
+// SearchStatus is returned by the four search functions
+// FirstInForceBefore(), LastInForceBefore(),
+// FirstAtOrBefore(), and LastAtOrBefore() to indicate
+// the result of the search.
 type SearchStatus int
 
 const (
