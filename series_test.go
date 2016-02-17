@@ -15,7 +15,7 @@ func Test011MovingAverage(t *testing.T) {
 
 	cv.Convey(`Given a primary series of TMFRAMEs, we should be able to generate a derived series representing the moving average`, t, func() {
 
-		outpath := "test.seq.frames.out"
+		outpath := "test.seq.frames.out.0"
 		//testFrames, tms, by := GenTestFramesSequence(10, &outpath)
 		GenTestFramesSequence(10, &outpath)
 
@@ -26,60 +26,170 @@ func Test011MovingAverage(t *testing.T) {
 
 func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 
-	//cv.Convey(`Given an Index, searching with JustBefore(tm) should return the Frame in force at tm`, t, func() {
-	cv.Convey(`Given an set of tm.Frames, a Ring holding those frame bytes, and an Index on that Ring,`+
-		` when we add messages to the ring, the ability to locate the event at a`+
-		` given timestamp with Index.InForceAt() should be preserved.`, t, func() {
+	cv.Convey(`Given an Series s, the call s.InForceBefore(tm) should `+
+		`return the Frame strictly before tm, while AtOrBefore(tm) returns `+
+		`the first of (any repeated) precisely time matched tick if available at exactly tm`,
+		t, func() {
 
-		outpath := "test.frames.out"
-		testFrames, tms, by := GenTestFrames(5, &outpath)
+			outpath := "test.frames.out.1"
+			testFrames, tms, by := GenTestFrames(5, &outpath)
 
-		// chuck unmarshal of the generated frames while we're at it
-		rest := by
-		var err error
-		for i := range testFrames {
-			var newFr Frame
-			rest, err = newFr.Unmarshal(rest)
-			panicOn(err)
-			if !FramesEqual(&newFr, testFrames[i]) {
-				panic(fmt.Sprintf("frame %v error: expected '%s' to equal '%s' upon unmarshal, but did not.", i, newFr, testFrames[i]))
-			}
-		}
-
-		// read back from file, to emulate actual use.
-		f, err := os.Open(outpath)
-		panicOn(err)
-		fr := NewFrameReader(f, 1024*1024)
-
-		var frame Frame
-		i := 0
-		for ; err == nil; i++ {
-			_, _, err = fr.NextFrame(&frame)
-			if err != nil {
-				if err == io.EOF {
-					break
+			// chuck unmarshal of the generated frames while we're at it
+			rest := by
+			var err error
+			for i := range testFrames {
+				var newFr Frame
+				rest, err = newFr.Unmarshal(rest)
+				panicOn(err)
+				if !FramesEqual(&newFr, testFrames[i]) {
+					panic(fmt.Sprintf("frame %v error: expected '%s' to equal '%s' upon unmarshal, but did not.", i, newFr, testFrames[i]))
 				}
-				panic(fmt.Sprintf("tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err))
 			}
-		}
 
-		sers := NewSeriesFromFrames(testFrames)
-		at, status := sers.InForceBefore(tms[2])
-		P("at, status = %v, %v", at, status)
-		cv.So(status, cv.ShouldEqual, Avail)
-		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[1])
+			// read back from file, to emulate actual use.
+			f, err := os.Open(outpath)
+			panicOn(err)
+			fr := NewFrameReader(f, 1024*1024)
 
-		at, status = sers.InForceBefore(tms[4].Add(time.Hour))
-		P("at, status = %v, %v", at, status)
-		cv.So(status, cv.ShouldEqual, InFuture)
-		cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[4])
+			var frame Frame
+			i := 0
+			for ; err == nil; i++ {
+				_, _, err = fr.NextFrame(&frame)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					panic(fmt.Sprintf("tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err))
+				}
+			}
 
-		at, status = sers.InForceBefore(tms[0])
-		P("at, status = %v, %v", at, status)
-		cv.So(status, cv.ShouldEqual, InPast)
-		cv.So(at, cv.ShouldEqual, nil)
+			sers := NewSeriesFromFrames(testFrames)
+			at, status, i := sers.InForceBefore(tms[2])
+			//P("at, status = %v, %v", at, status)
+			cv.So(status, cv.ShouldEqual, Avail)
+			cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[1])
+			cv.So(i, cv.ShouldEqual, 1)
 
-	})
+			at, status, i = sers.InForceBefore(tms[4].Add(time.Hour))
+			//P("at, status = %v, %v", at, status)
+			cv.So(status, cv.ShouldEqual, InFuture)
+			cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[4])
+			cv.So(i, cv.ShouldEqual, 4)
+
+			at, status, i = sers.InForceBefore(tms[0])
+			//P("at, status = %v, %v", at, status)
+			cv.So(status, cv.ShouldEqual, InPast)
+			cv.So(at, cv.ShouldEqual, nil)
+			cv.So(i, cv.ShouldEqual, -1)
+		})
+
+	cv.Convey(`FirstAtOrBefore(tm) returns `+
+		`the first of (any repeated time timestamps) precisely time matched tick if available at exactly tm, `+
+		` and otherwise returns the Frame (if any) before tm`,
+		t, func() {
+
+			outpath := "test.frames.out.2"
+			repeat, tms, _ := GenTestFramesSequence(5, &outpath)
+
+			// have them repeat the same time but with different values 0..4
+			// so we can distinguish if the first one was returned.
+			for i := 0; i < 5; i++ {
+				repeat[i].SetTm(repeat[0].Tm())
+			}
+
+			// read back from file, to emulate actual use.
+			f, err := os.Open(outpath)
+			panicOn(err)
+			fr := NewFrameReader(f, 1024*1024)
+
+			var frame Frame
+			i := 0
+			for ; err == nil; i++ {
+				_, _, err = fr.NextFrame(&frame)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					panic(fmt.Sprintf("tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err))
+				}
+			}
+
+			sers := NewSeriesFromFrames(repeat)
+
+			at, status, i := sers.FirstAtOrBefore(tms[0])
+			cv.So(status, cv.ShouldEqual, Avail)
+			cv.So(at.GetV0(), cv.ShouldEqual, 0)
+			cv.So(i, cv.ShouldEqual, 0)
+
+			P("FristAtOrBefore InFuture test")
+			at, status, i = sers.FirstAtOrBefore(tms[0].Add(time.Hour))
+			cv.So(status, cv.ShouldEqual, InFuture)
+			cv.So(at.GetV0(), cv.ShouldEqual, 0)
+			cv.So(i, cv.ShouldEqual, 0)
+
+			at, status, i = sers.FirstAtOrBefore(tms[0].Add(-time.Nanosecond))
+			cv.So(status, cv.ShouldEqual, InPast)
+			cv.So(at, cv.ShouldEqual, nil)
+			cv.So(i, cv.ShouldEqual, -1)
+
+		})
+
+	cv.Convey(`LastAtOrBefore(tm) returns `+
+		`the last of (any repeat time timestamped) precisely time matched tick if available at exactly tm, `+
+		` and otherwise returns the Frame (if any) before tm`,
+		t, func() {
+
+			outpath := "test.frames.out.3"
+			repeat, tms, _ := GenTestFramesSequence(5, &outpath)
+
+			// have them repeat the same time but with different values 0..4
+			// so we can distinguish if the first one was returned.
+			for i := 0; i < 5; i++ {
+				repeat[i].SetTm(repeat[0].Tm())
+			}
+
+			// read back from file, to emulate actual use.
+			f, err := os.Open(outpath)
+			panicOn(err)
+			fr := NewFrameReader(f, 1024*1024)
+
+			var frame Frame
+			i := 0
+			for ; err == nil; i++ {
+				_, _, err = fr.NextFrame(&frame)
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					panic(fmt.Sprintf("tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err))
+				}
+			}
+
+			sers := NewSeriesFromFrames(repeat)
+			at, status, i := sers.LastAtOrBefore(tms[2])
+			//P("at, status = %v, %v", at, status)
+			cv.So(status, cv.ShouldEqual, Avail)
+			cv.So(at.GetV0(), cv.ShouldEqual, 4)
+			cv.So(i, cv.ShouldEqual, 4)
+
+			at, status, i = sers.LastAtOrBefore(tms[0])
+			cv.So(status, cv.ShouldEqual, Avail)
+			cv.So(at.GetV0(), cv.ShouldEqual, 4)
+			cv.So(i, cv.ShouldEqual, 4)
+
+			at, status, i = sers.LastAtOrBefore(tms[0].Add(-time.Nanosecond))
+			cv.So(status, cv.ShouldEqual, InPast)
+			cv.So(at, cv.ShouldEqual, nil)
+			cv.So(i, cv.ShouldEqual, -1)
+
+			at, status, i = sers.LastAtOrBefore(tms[4].Add(time.Hour))
+			//P("at, status = %v, %v", at, status)
+			cv.So(status, cv.ShouldEqual, InFuture)
+			cv.So(time.Unix(0, at.Tm()).UTC(), cv.ShouldResemble, tms[4])
+			cv.So(i, cv.ShouldEqual, 4)
+
+		})
+
 }
 
 // generate n test Frames, with 4 different frame types, and randomly varying sizes

@@ -79,9 +79,15 @@ type Frame struct {
 	Data []byte // the variable length payload after the UDE
 }
 
-// extract and return the Prim timestamp from the frame (this is a UnixNano nanosecond timestamp, with the low 3 bits zeroed).
+// Tm extracts and returns the Prim timestamp from the frame (this is a UnixNano nanosecond timestamp, with the low 3 bits zeroed).
 func (f *Frame) Tm() int64 {
 	return f.Prim &^ 7
+}
+
+// SetTm set the Prim timestamp from t. It zeros the first 3 bits of t before
+// storing it, and preserves the PTI already in the primary word.
+func (f *Frame) SetTm(t int64) {
+	f.Prim = (t &^ 7) | f.Prim&7
 }
 
 // convert from a time.Time to a frame.Tm() comparable timestamp
