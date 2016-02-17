@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-func Test011MovingAverage(t *testing.T) {
-
-	cv.Convey(`Given a primary series of TMFRAMEs, we should be able to generate a derived series representing the moving average`, t, func() {
-
-		outpath := "test.seq.frames.out.0"
-		//testFrames, tms, by := GenTestFramesSequence(10, &outpath)
-		GenTestFramesSequence(10, &outpath)
-
-		//ser := Series(testFrames)
-
-	})
-}
-
 func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 
 	cv.Convey(`Given an Series s, the call s.LastInForceBefore(tm) should `+
@@ -277,4 +264,511 @@ func GenTestFramesSequence(n int, outpath *string) (frames []*Frame, tms []time.
 	}
 
 	return
+}
+
+func GenerateSeriesWithRepeats(reps []int) *Series {
+
+	var frames []*Frame
+	t0, err := time.Parse(time.RFC3339, "2016-02-16T00:00:00Z")
+	panicOn(err)
+	t0 = t0.UTC()
+
+	var f0 *Frame
+	for i := range reps {
+		j := reps[i]
+		jtm := t0.Add(time.Second * time.Duration(i))
+		for k := 0; k < j; k++ {
+			f0, err = NewFrame(jtm, EvOneFloat64, float64(i), 0, nil)
+			panicOn(err)
+			frames = append(frames, f0)
+		}
+	}
+	return NewSeriesFromFrames(frames)
+}
+
+func Test015ExtendedRepetitionTestLastInForceBefore(t *testing.T) {
+
+	cv.Convey(`Given an Series s, the call s.LastInForceBefore(tm) should `+
+		`return the last repeated Frame < tm, even with varying repetition patterns`, t, func() {
+		reps := []int{5, 5, 5, 5}
+		sers := GenerateSeriesWithRepeats(reps)
+
+		_, status, i := sers.LastInForceBefore(time.Unix(0, sers.Frames[19].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 19)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[19].Tm()))
+		cv.So(i, cv.ShouldEqual, 14)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[14].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 9)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[9].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 4)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 2, 1, 2}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[5].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 5)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[5].Tm()))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 3)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 2)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1, 1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[3].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[0].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[1].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+	})
+}
+
+func Test016ExtendedRepetitionTestLastAtOrBefore(t *testing.T) {
+
+	cv.Convey(`Given an Series s, the call s.LastAtOrBefore(tm) should `+
+		`return the last repeated Frame <= tm, even with varying repetition patterns`, t, func() {
+		reps := []int{5, 5, 5, 5}
+		sers := GenerateSeriesWithRepeats(reps)
+
+		_, status, i := sers.LastAtOrBefore(time.Unix(0, sers.Frames[19].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 19)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[15].Tm()))
+		cv.So(i, cv.ShouldEqual, 19)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[10].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 14)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[5].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 9)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 4)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 2, 1, 2}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[5].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 5)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[5].Tm()))
+		cv.So(i, cv.ShouldEqual, 5)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 5)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 3)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 2)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 2)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1, 1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[3].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(i, cv.ShouldEqual, 2)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[1].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.LastAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+	})
+}
+
+// 017
+
+func Test017ExtendedRepetitionTestFirstAtOrBefore(t *testing.T) {
+
+	cv.Convey(`Given an Series s, the call s.FirstAtOrBefore(tm) should `+
+		`return the first repeat <= tm, even with varying repetition patterns`, t, func() {
+		reps := []int{5, 5, 5, 5}
+		sers := GenerateSeriesWithRepeats(reps)
+
+		_, status, i := sers.FirstAtOrBefore(time.Unix(0, sers.Frames[19].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 15)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[15].Tm()))
+		cv.So(i, cv.ShouldEqual, 15)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[14].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 10)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[9].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 5)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 2, 1, 2}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[5].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 4)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[5].Tm()))
+		cv.So(i, cv.ShouldEqual, 4)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 4)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 3)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 1)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 1)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1, 1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[3].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(i, cv.ShouldEqual, 2)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[1].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstAtOrBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+	})
+}
+
+// 018
+
+func Test018ExtendedRepetitionTestFirstInForceBefore(t *testing.T) {
+
+	cv.Convey(`Given an Series s, the call s.FirstInForceBefore(tm) should `+
+		`return the first of all repeats at the nearest point strictly < tm, even with varying repetition patterns`, t, func() {
+		reps := []int{5, 5, 5, 5}
+		sers := GenerateSeriesWithRepeats(reps)
+
+		_, status, i := sers.FirstInForceBefore(time.Unix(0, sers.Frames[19].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 15)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[19].Tm()))
+		cv.So(i, cv.ShouldEqual, 10)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[14].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 5)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[9].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 2, 1, 2}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[5].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 4)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[5].Tm()))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[4].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 3)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 1)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(status, cv.ShouldEqual, Avail)
+		cv.So(i, cv.ShouldEqual, 0)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1, 1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[3].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 3)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[3].Tm()))
+		cv.So(i, cv.ShouldEqual, 2)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[2].Tm()))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, -1)
+		cv.So(status, cv.ShouldEqual, InPast)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, -1)
+		cv.So(status, cv.ShouldEqual, InPast)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()-10))
+		cv.So(status, cv.ShouldEqual, InPast)
+		cv.So(i, cv.ShouldEqual, -1)
+
+		reps = []int{1, 1}
+		sers = GenerateSeriesWithRepeats(reps)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[1].Tm()+10))
+		cv.So(i, cv.ShouldEqual, 1)
+		cv.So(status, cv.ShouldEqual, InFuture)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[1].Tm()))
+		cv.So(i, cv.ShouldEqual, 0)
+		cv.So(status, cv.ShouldEqual, Avail)
+
+		_, status, i = sers.FirstInForceBefore(time.Unix(0, sers.Frames[0].Tm()))
+		cv.So(i, cv.ShouldEqual, -1)
+		cv.So(status, cv.ShouldEqual, InPast)
+
+	})
 }
