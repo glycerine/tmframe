@@ -151,7 +151,8 @@ func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 }
 
 // FirstAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
-// the earliest (first in chronological order) of these ties at s.
+// the earliest (first in chronological order) of these ties at s.  Nearest means
+// that there is no other timestamp r such that s < r < tm.
 func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
@@ -195,7 +196,8 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 }
 
 // LastAtOrBefore(): looking at the ties for the nearest timestamp s <= tm, return
-// the newest (last in chronological order) of these ties at timestamp s.
+// the newest (last in chronological order) of these ties at timestamp s.  Nearest means
+// that there is no other timestamp r such that s < r < tm.
 func (s *Series) LastAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
