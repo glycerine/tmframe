@@ -13,7 +13,7 @@ import (
 
 func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 
-	cv.Convey(`Given an Series s, the call s.LastInForceBefore(tm) should `+
+	cv.Convey(`Given a Series s, the call s.LastInForceBefore(tm) should `+
 		`return the last Frame strictly before tm`, t, func() {
 
 		outpath := "test.frames.out.1"
@@ -68,7 +68,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		cv.So(i, cv.ShouldEqual, -1)
 	})
 
-	cv.Convey(`Given an Series ser, the call ser.FirstInForceBefore(t) should `+
+	cv.Convey(`Given a Series ser, the call ser.FirstInForceBefore(t) should `+
 		`return the first Frame in any series of repeated frames tied at the`+
 		` same timestamp s, when s < t and no other timestamp r on an existing`+
 		` frame lives between them; there is no r: s < r < t`, t, func() {
@@ -288,7 +288,7 @@ func GenerateSeriesWithRepeats(reps []int) *Series {
 
 func Test015ExtendedRepetitionTestLastInForceBefore(t *testing.T) {
 
-	cv.Convey(`Given an Series s, the call s.LastInForceBefore(tm) should `+
+	cv.Convey(`Given a Series s, the call s.LastInForceBefore(tm) should `+
 		`return the last repeated Frame < tm, even with varying repetition patterns`, t, func() {
 		reps := []int{5, 5, 5, 5}
 		sers := GenerateSeriesWithRepeats(reps)
@@ -393,7 +393,7 @@ func Test015ExtendedRepetitionTestLastInForceBefore(t *testing.T) {
 
 func Test016ExtendedRepetitionTestLastAtOrBefore(t *testing.T) {
 
-	cv.Convey(`Given an Series s, the call s.LastAtOrBefore(tm) should `+
+	cv.Convey(`Given a Series s, the call s.LastAtOrBefore(tm) should `+
 		`return the last repeated Frame <= tm, even with varying repetition patterns`, t, func() {
 		reps := []int{5, 5, 5, 5}
 		sers := GenerateSeriesWithRepeats(reps)
@@ -521,7 +521,7 @@ func Test016ExtendedRepetitionTestLastAtOrBefore(t *testing.T) {
 
 func Test017ExtendedRepetitionTestFirstAtOrBefore(t *testing.T) {
 
-	cv.Convey(`Given an Series s, the call s.FirstAtOrBefore(tm) should `+
+	cv.Convey(`Given a Series s, the call s.FirstAtOrBefore(tm) should `+
 		`return the first repeat <= tm, even with varying repetition patterns`, t, func() {
 		reps := []int{5, 5, 5, 5}
 		sers := GenerateSeriesWithRepeats(reps)
@@ -649,7 +649,7 @@ func Test017ExtendedRepetitionTestFirstAtOrBefore(t *testing.T) {
 
 func Test018ExtendedRepetitionTestFirstInForceBefore(t *testing.T) {
 
-	cv.Convey(`Given an Series s, the call s.FirstInForceBefore(tm) should `+
+	cv.Convey(`Given a Series s, the call s.FirstInForceBefore(tm) should `+
 		`return the first of all repeats at the nearest point strictly < tm, even with varying repetition patterns`, t, func() {
 		reps := []int{5, 5, 5, 5}
 		sers := GenerateSeriesWithRepeats(reps)
