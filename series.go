@@ -6,19 +6,17 @@ import (
 	"time"
 )
 
-// Series represents a set of sequential Frames in a timeseries.
-//
-// Series search functions: some of the principal
-// primitives for querying a Series are the following
-// for functions.
+// Series represents a set of sequential Frames,
+// which, taken in order, represent points in a timeseries.
 //
 // FirstInForceBefore(), LastInForceBefore(),
-// FirstAtOrBefore(), and LastAtOrBefore()
-// provide searching functionality for through a
-// timeseries that may have duplicated timestamps.
+// FirstAtOrBefore(), and LastAtOrBefore() are the
+// main methods to search for a specific timepoint,
+// or the last event in force before a specific timepoint.
 //
 // See the LastInForceBefore() for the most detailed
-// description. The other three functions are analogous.
+// description of the arguments and return values.
+// The other three functions are analogous.
 //
 type Series struct {
 	Frames []*Frame
