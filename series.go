@@ -53,10 +53,10 @@ func (s *Series) InForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	utm := TimeToPrimTm(tm)
 	// Search returns the smallest index i in [0, n) at which f(i) is true
 	i := sort.Search(m, func(i int) bool {
-		//P("sort called at i=%v, returning %v b/c %v vs %v", i, s.Frames[i].Tm() >= utm, s.Frames[i].Tm(), utm)
+		//Q("sort called at i=%v, returning %v b/c %v vs %v", i, s.Frames[i].Tm() >= utm, s.Frames[i].Tm(), utm)
 		return s.Frames[i].Tm() >= utm
 	})
-	//P("i = %v", i)
+	//Q("i = %v", i)
 	if i == m {
 		return s.Frames[m-1], InFuture, m - 1
 	}
@@ -75,18 +75,27 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 	// Search returns the smallest index i in [0, n) at which f(i) is true.
 	// If i == n, this means no such index had f(i) true.
 	i := sort.Search(m, func(i int) bool {
-		P("FirstAtOrBefore sort called at i=%v, returning %v b/c %v vs %v", i, s.Frames[i].Tm() >= utm, s.Frames[i].Tm(), utm)
+		//Q("FirstAtOrBefore sort called at i=%v, returning (%v >= %v) is %v", i, s.Frames[i].Tm(), utm, s.Frames[i].Tm() >= utm)
 		return s.Frames[i].Tm() >= utm
 	})
-	P("FirstAtOrBefore i = %v", i)
+	//Q("FirstAtOrBefore i = %v", i)
 	if i == m {
 		// all frames Tm < utm
 		rtm := s.Frames[m-1].Tm()
-		// spin back to the first at rtm
-		k := m - 1
-		for k >= 1 && s.Frames[k-1].Tm() == rtm {
-			P("spinning down to k=%v", k-1)
-			k--
+
+		// Handling repeated timestamps:
+		// Spin back to the first Frame at rtm.
+		// For worst case efficiency of O(log(n)), rather
+		// than O(n), use Search() to
+		// find the smallest index such that Tm == rtm.
+		k := sort.Search(m, func(i int) bool {
+			//Q("FirstAtOrBefore repeated equals search: sort called at i=%v, returning (%v == %v) is %v", i, s.Frames[i].Tm(), rtm, s.Frames[i].Tm() == rtm)
+			return s.Frames[i].Tm() == rtm
+		})
+		if k == m {
+			// no Frames had Tm <= rtm
+			//Q("no Frames had Tm <= rtm")
+			panic("this is impossible, rtm came from a Frame")
 		}
 		return s.Frames[k], InFuture, k
 	}
@@ -110,19 +119,45 @@ func (s *Series) LastAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 
 	m := len(s.Frames)
 	utm := TimeToPrimTm(tm)
-	// Search returns the smallest index i in [0, n) at which f(i) is true
+	// Search returns the smallest index i in [0, n) at which f(i) is true.
+	// If i == n, this means no such index had f(i) true.
 	i := sort.Search(m, func(i int) bool {
-		//P("sort called at i=%v, returning %v b/c %v vs %v", i, s.Frames[i].Tm() >= utm, s.Frames[i].Tm(), utm)
+		//Q("LastAtOrBefore sort called at i=%v, returning %v b/c %v vs %v", i, s.Frames[i].Tm() >= utm, s.Frames[i].Tm(), utm)
 		return s.Frames[i].Tm() >= utm
 	})
-	//P("i = %v", i)
+	//Q("LastAtOrBefore i = %v", i)
 	if i == m {
+		// all frames Tm < utm
 		return s.Frames[m-1], InFuture, m - 1
 	}
+	// INVAR: at least one entry had Tm >= utm
 
+	// i is the smallest Frame such that itm >= utm,
+	itm := s.Frames[i].Tm()
 	if i == 0 {
-		return nil, InPast, -1
+		if itm > utm {
+			return nil, InPast, -1
+		}
 	}
+	// But: there can be many at itm and we want the largest index that ties.
 
-	return s.Frames[i-1], Avail, i - 1
+	// Handling repeated timestamps:
+	// Search foward to the last Frame at itm.
+	// For worst case efficiency of O(log(n)), rather
+	// than O(n), use Search() again to
+	// find the smallest index such that Tm > itm,
+	// then subtract 1.
+	k := sort.Search(m, func(i int) bool {
+		//Q("LastAtOrBefore repeated equals search: sort called at i=%v, returning (%v == %v) is %v", i, s.Frames[i].Tm(), itm, s.Frames[i].Tm() > itm)
+		return s.Frames[i].Tm() > itm
+	})
+
+	if k == m {
+		//Q("no Frames had Tm > itm")
+		return s.Frames[m-1], Avail, m - 1
+	}
+	if k == 0 {
+		panic("internal logic error, should be impossible since itm came from an existing Frame")
+	}
+	return s.Frames[k-1], Avail, k - 1
 }

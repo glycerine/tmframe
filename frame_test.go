@@ -75,7 +75,7 @@ func TestParsingTMFRAME(t *testing.T) {
 
 			var frame2 Frame
 			frame2.Unmarshal(by)
-			cv.So(&frame2, cv.ShouldResemble, frame)
+			cv.So(FramesEqual(&frame2, frame), cv.ShouldBeTrue)
 			Q("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
 			cv.So(frame2.GetEvtnum(), cv.ShouldEqual, ev)
 			Q("frame2.Tm = %v", time.Unix(0, frame2.Tm()))

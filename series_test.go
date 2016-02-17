@@ -140,7 +140,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		t, func() {
 
 			outpath := "test.frames.out.3"
-			repeat, tms, _ := GenTestFramesSequence(5, &outpath)
+			repeat, _, _ := GenTestFramesSequence(5, &outpath)
 
 			// have them repeat the same time but with different values 0..4
 			// so we can distinguish if the first one was returned.
@@ -167,18 +167,19 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 
 			sers := NewSeriesFromFrames(repeat)
 
-			at, status, i := sers.LastAtOrBefore(tms[0])
+			base := time.Unix(0, repeat[0].Tm())
+			at, status, i := sers.LastAtOrBefore(base)
 			cv.So(status, cv.ShouldEqual, Avail)
 			cv.So(at.GetV0(), cv.ShouldEqual, 4)
 			cv.So(i, cv.ShouldEqual, 4)
 
 			P("LastAtOrBefore InFuture test")
-			at, status, i = sers.LastAtOrBefore(tms[0].Add(time.Hour))
+			at, status, i = sers.LastAtOrBefore(base.Add(time.Hour))
 			cv.So(status, cv.ShouldEqual, InFuture)
 			cv.So(at.GetV0(), cv.ShouldEqual, 4)
 			cv.So(i, cv.ShouldEqual, 4)
 
-			at, status, i = sers.LastAtOrBefore(tms[0].Add(-time.Nanosecond))
+			at, status, i = sers.LastAtOrBefore(base.Add(-time.Nanosecond))
 			cv.So(status, cv.ShouldEqual, InPast)
 			cv.So(at, cv.ShouldEqual, nil)
 			cv.So(i, cv.ShouldEqual, -1)
