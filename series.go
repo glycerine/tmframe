@@ -1,14 +1,3 @@
-//
-// Search functions:
-//
-// FirstInForceBefore(), LastInForceBefore(),
-// FirstAtOrBefore(), and LastAtOrBefore()
-// provide searching functionality for through a
-// timeseries that may have duplicated timestamps.
-//
-// See the LastInForceBefore() for the most detailed
-// description.
-//
 package tm
 
 import (
@@ -18,6 +7,19 @@ import (
 )
 
 // Series represents a set of sequential Frames in a timeseries.
+//
+// Series search functions: some of the principal
+// primitives for querying a Series are the following
+// for functions.
+//
+// FirstInForceBefore(), LastInForceBefore(),
+// FirstAtOrBefore(), and LastAtOrBefore()
+// provide searching functionality for through a
+// timeseries that may have duplicated timestamps.
+//
+// See the LastInForceBefore() for the most detailed
+// description. The other three functions are analogous.
+//
 type Series struct {
 	Frames []*Frame
 }
