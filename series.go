@@ -51,7 +51,7 @@ func (s SearchStatus) String() string {
 	case InFuture:
 		return "InFuture"
 	}
-	panic(fmt.Sprintf("unknown SearchStatus %v", s))
+	panic(fmt.Sprintf("unknown SearchStatus %d", int(s)))
 }
 
 // LastInForceBefore():
