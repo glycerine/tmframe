@@ -106,7 +106,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		cv.So(at.GetV0(), cv.ShouldEqual, 4)
 		cv.So(i, cv.ShouldEqual, 4)
 
-		sers.Frames = sers.Frames[:5]
+		sers.Frames = sers.Frames[:4]
 		at, status, i = sers.FirstInForceBefore(tms[4].Add(time.Hour))
 		cv.So(status, cv.ShouldEqual, InFuture)
 		cv.So(at.GetV0(), cv.ShouldEqual, 1)

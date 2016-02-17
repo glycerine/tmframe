@@ -88,14 +88,46 @@ func (s *Series) FirstInForceBefore(tm time.Time) (*Frame, SearchStatus, int) {
 		return s.Frames[i].Tm() >= utm
 	})
 	if i == m {
-		return s.Frames[m-1], InFuture, m - 1
+		// all frames Tm < utm
+		rtm := s.Frames[m-1].Tm()
+
+		// Handling repeated timestamps:
+		// Need to search back to the first Frame at rtm.
+		// For worst case efficiency of O(log(n)), rather
+		// than O(n), use Search() again to
+		// find the smallest index such that Tm >= rtm.
+		k := sort.Search(m, func(i int) bool {
+			return s.Frames[i].Tm() >= rtm
+		})
+		// k == m is impossible, rtm came from a Frame in s.Frames
+		return s.Frames[k], InFuture, k
 	}
+	// INVAR: at least one entry had Tm >= utm
 
 	if i == 0 {
 		return nil, InPast, -1
 	}
 
-	return s.Frames[i-1], Avail, i - 1
+	// i is the smallest Frame such that itm >= utm.
+	// Since we want to go strictly before that i,
+	// start at j = i - 1; then find the first of any ties
+	// at the Frames[j].Tm() timestamp. If we don't
+	// find any, just return s.Frame[j].
+	j := i - 1
+	jtm := s.Frames[j].Tm()
+
+	// Handling repeated timestamps:
+	// Search foward to the last Frame at itm.
+	// For worst case efficiency of O(log(n)), rather
+	// than O(n), use Search() again to
+	// find the smallest index such that Tm > itm,
+	// then subtract 1.
+	k := sort.Search(m, func(i int) bool {
+		return s.Frames[i].Tm() >= jtm
+	})
+
+	// k == m is impossible since jtm comes from the j Frame
+	return s.Frames[k], Avail, k
 }
 
 func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
@@ -119,7 +151,7 @@ func (s *Series) FirstAtOrBefore(tm time.Time) (*Frame, SearchStatus, int) {
 		// than O(n), use Search() again to
 		// find the smallest index such that Tm == rtm.
 		k := sort.Search(m, func(i int) bool {
-			return s.Frames[i].Tm() == rtm
+			return s.Frames[i].Tm() >= rtm
 		})
 		// k == m is impossible, rtm came from a Frame in s.Frames
 		return s.Frames[k], InFuture, k
