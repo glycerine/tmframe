@@ -500,7 +500,7 @@ func (fr *FrameReader) PeekNextFrame() (nBytes int64, err error) {
 var FrameTooLargeErr = fmt.Errorf("frame was larger than FrameReader's maximum")
 
 // NextFrame reads the next frame into fillme if provided. If fillme is
-// null it allocates a new Frame. NextFrame returns a pointer to the filled
+// nil, NextFrame allocates a new Frame. NextFrame returns a pointer to the filled
 // frame, along with the number of bytes on the wire used by the frame.
 // Returns a nil *Frame and nbytes of 0 if err is not nil.
 func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err error) {

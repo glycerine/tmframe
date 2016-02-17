@@ -81,7 +81,7 @@ nextfile:
 				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			DisplayFrame(frame, cfg, i)
+			DisplayFrame(&frame, cfg, i)
 		}
 	}
 }
@@ -250,12 +250,12 @@ func FollowFile(path string, cfg *TfcatConfig) {
 
 	fr := tf.NewFrameReader(f, 1024*1024)
 
-	var frame *tf.Frame
+	var frame tf.Frame
 
 	i := int64(1)
 nextFrame:
 	for {
-		frame, _, err = fr.NextFrame()
+		_, _, err = fr.NextFrame(&frame)
 		if err != nil {
 			if err == io.EOF {
 				select {
@@ -268,7 +268,7 @@ nextFrame:
 			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
 			os.Exit(1)
 		}
-		DisplayFrame(frame, cfg, i)
+		DisplayFrame(&frame, cfg, i)
 		i++
 	}
 }
