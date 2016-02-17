@@ -530,12 +530,19 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 		}
 	}
 
-	var f Frame
-	_, err = f.Unmarshal(fr.by[:need])
+	if fillme == nil {
+		var f Frame
+		_, err = f.Unmarshal(fr.by[:need])
+		if err != nil {
+			return nil, 0, err
+		}
+		return &f, need, nil
+	}
+	_, err = fillme.Unmarshal(fr.by[:need])
 	if err != nil {
 		return nil, 0, err
 	}
-	return &f, need, nil
+	return fillme, need, nil
 }
 
 // pretty print the names of the events into a string
