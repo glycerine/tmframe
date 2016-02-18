@@ -1,9 +1,10 @@
-package main
+package tm
 
 import (
 	"flag"
 )
 
+// configure the tfcat command utility / DisplayFrame function
 type TfcatConfig struct {
 	PrettyPrint bool
 	SkipPayload bool
