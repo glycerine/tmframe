@@ -19,9 +19,9 @@ import (
 func DisplayFrame(frame *Frame, i int64, prettyPrint bool, skipPayload bool) {
 
 	if i >= 0 {
-		fmt.Printf("%06d %v", i, frame)
+		fmt.Printf("%06d %s", i, frame.String())
 	} else {
-		fmt.Printf("%06d %v", frame)
+		fmt.Printf("%s", frame.String())
 	}
 	if !skipPayload {
 		evtnum := frame.GetEvtnum()
