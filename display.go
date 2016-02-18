@@ -11,8 +11,8 @@ import (
 
 // display and pretty print message payloads in json/msgpack format.
 
-// DisplayFrame prints a frame along with optional number i.
-// If i < 0, i is not printed. If prettyPrint is true and the payload
+// DisplayFrame prints a frame to os.Stdout, along with optional number i.
+// If i < 0, the i is not printed. If prettyPrint is true and the payload
 // is json or msgpack, we will display in an easier to ready pretty-printed
 // json format. If skipPayload is true we will only print the Frame header
 // information.
