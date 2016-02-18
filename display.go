@@ -9,20 +9,24 @@ import (
 	"time"
 )
 
-// display and pretty print json/msgpack
+// display and pretty print message payloads in json/msgpack format.
 
-// print a frame
-func DisplayFrame(frame *Frame, cfg *TfcatConfig, i int64) {
+// DisplayFrame prints a frame along with optional number i.
+// If i < 0, i is not printed. If prettyPrint is true and the payload
+// is json or msgpack, we will display in an easier to ready pretty-printed
+// json format. If skipPayload is true we will only print the Frame header
+// information.
+func DisplayFrame(frame *Frame, i int64, prettyPrint bool, skipPayload bool) {
 
 	if i >= 0 {
 		fmt.Printf("%06d %v", i, frame)
 	} else {
 		fmt.Printf("%06d %v", frame)
 	}
-	if cfg == nil || !cfg.SkipPayload {
+	if !skipPayload {
 		evtnum := frame.GetEvtnum()
 		if evtnum == EvJson {
-			pp := prettyPrintJson(cfg != nil && cfg.PrettyPrint, frame.Data)
+			pp := prettyPrintJson(prettyPrint, frame.Data)
 			fmt.Printf("  %s", string(pp))
 		}
 		if evtnum == EvMsgpKafka || evtnum == EvMsgpack {
@@ -39,7 +43,7 @@ func DisplayFrame(frame *Frame, cfg *TfcatConfig, i int64) {
 			enc := codec.NewEncoder(&w, &msgpHelper.jh)
 			err = enc.Encode(&iface)
 			panicOn(err)
-			pp := prettyPrintJson(cfg != nil && cfg.PrettyPrint, w.Bytes())
+			pp := prettyPrintJson(prettyPrint, w.Bytes())
 			fmt.Printf(" %s", string(pp))
 		}
 	}
@@ -104,6 +108,7 @@ func init() {
 	msgpHelper.init()
 }
 
+// TimeExt allows github.com/ugorji/go/codec to understand Go time.Time
 type TimeExt struct{}
 
 func (x TimeExt) WriteExt(interface{}) []byte { panic("unsupported") }
@@ -130,6 +135,7 @@ func (x TimeExt) UpdateExt(dest interface{}, v interface{}) {
 	}
 }
 
+// JsonBytesAsStringExt allows github.com/ugorji/go/codec to passthrough json bytes without conversion.
 type JsonBytesAsStringExt struct{}
 
 //func (x JsonBytesAsStringExt) WriteExt(interface{}) []byte { panic("unsupported") }
