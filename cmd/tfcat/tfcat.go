@@ -52,6 +52,16 @@ func main() {
 		return
 	}
 
+	if cfg.RawCount > 0 {
+		if len(leftover) != 1 {
+			fmt.Fprintf(os.Stderr, "can only copy raw messages from one file\n")
+			showUse(myflags)
+			os.Exit(1)
+		}
+		SendRawBytes(leftover[0], cfg.RawCount, os.Stdout)
+		return
+	}
+
 	i := int64(1)
 nextfile:
 	for _, inputFile := range leftover {
@@ -124,4 +134,41 @@ nextFrame:
 		tf.DisplayFrame(&frame, i, cfg.PrettyPrint, cfg.SkipPayload)
 		i++
 	}
+}
+
+// copy the raw TMFRAME bytes of messageCount messages read from
+// inputPath to w
+func SendRawBytes(inputPath string, messageCount int, w io.Writer) {
+
+	if !FileExists(inputPath) {
+		fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputPath)
+		os.Exit(1)
+	}
+
+	f, err := os.Open(inputPath)
+	panicOn(err)
+	defer f.Close()
+
+	fr := tf.NewFrameReader(f, 1024*1024)
+	var frame tf.Frame
+	byteCount := int64(0)
+
+	for i := 0; i < messageCount; i++ {
+		_, nbytes, err := fr.NextFrame(&frame)
+		if err != nil {
+			panic(err)
+			//os.Exit(0)
+		}
+		byteCount += nbytes
+	}
+
+	// seek back to beginning to copy just those bytes
+	_, err = f.Seek(0, 0)
+	panicOn(err)
+	wrote, err := io.CopyN(w, f, byteCount)
+	if wrote != byteCount {
+		panic(fmt.Sprintf("short write: %v vs %v expected", wrote, byteCount))
+	}
+	panicOn(err)
+
 }
