@@ -230,8 +230,11 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 var TooShortErr = fmt.Errorf("data supplied is too short to represent a TMFRAME frame")
 
 // Unmarshal overwrites f with the restored value of the TMFRAME found
-// in the by []byte data.
-func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
+// in the by []byte data. If copyData is true, we'll make a copy of
+// the underlying data into the frame f.Data; otherwise we merely point
+// to it. NB If the underlying buffer by is recycled/changes, and you
+// want to keep around multiple frames, you should use copyData = true.
+func (f *Frame) Unmarshal(by []byte, copyData bool) (rest []byte, err error) {
 	// zero it all
 	f.V0 = 0
 	f.Ude = 0
@@ -283,6 +286,11 @@ func (f *Frame) Unmarshal(by []byte) (rest []byte, err error) {
 		}
 		if ulen > 0 {
 			f.Data = by[16 : 16+ucount-1] // -1 because the zero terminating byte only goes on the wire
+			if copyData {
+				cp := make([]byte, len(f.Data))
+				copy(cp, f.Data)
+				f.Data = cp
+			}
 		}
 		return by[16+ucount:], nil
 	default:
@@ -530,15 +538,16 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 		}
 	}
 
+	yesCopyTheData := true
 	if fillme == nil {
 		var f Frame
-		_, err = f.Unmarshal(fr.by[:need])
+		_, err = f.Unmarshal(fr.by[:need], yesCopyTheData)
 		if err != nil {
 			return nil, 0, err
 		}
 		return &f, need, nil
 	}
-	_, err = fillme.Unmarshal(fr.by[:need])
+	_, err = fillme.Unmarshal(fr.by[:need], yesCopyTheData)
 	if err != nil {
 		return nil, 0, err
 	}

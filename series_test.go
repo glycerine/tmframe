@@ -24,7 +24,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		var err error
 		for i := range testFrames {
 			var newFr Frame
-			rest, err = newFr.Unmarshal(rest)
+			rest, err = newFr.Unmarshal(rest, false)
 			panicOn(err)
 			if !FramesEqual(&newFr, testFrames[i]) {
 				panic(fmt.Sprintf("frame %v error: expected '%s' to equal '%s' upon unmarshal, but did not.", i, newFr, testFrames[i]))

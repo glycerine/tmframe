@@ -33,7 +33,7 @@ func TestParsingTMFRAME(t *testing.T) {
 		q("by = '%v'", string(by))
 
 		var frame2 Frame
-		frame2.Unmarshal(by)
+		frame2.Unmarshal(by, false)
 		cv.So(&frame2, cv.ShouldResemble, frame)
 
 	})
@@ -74,7 +74,7 @@ func TestParsingTMFRAME(t *testing.T) {
 			q("by = '%v'", string(by))
 
 			var frame2 Frame
-			frame2.Unmarshal(by)
+			frame2.Unmarshal(by, false)
 			cv.So(FramesEqual(&frame2, frame), cv.ShouldBeTrue)
 			q("ev = %v and frame2.GetEvtnum()=%v", ev, frame2.GetEvtnum())
 			cv.So(frame2.GetEvtnum(), cv.ShouldEqual, ev)

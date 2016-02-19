@@ -20,14 +20,15 @@ func ReadAllFrames(inputFile string) ([]*Frame, error) {
 
 	res := []*Frame{}
 	for ; err == nil; i++ {
-		frame := &Frame{}
-		_, _, err = fr.NextFrame(frame)
+		frame, _, err := fr.NextFrame(nil)
 		if err != nil {
 			if err == io.EOF {
 				return res, nil
 			}
 			return res, fmt.Errorf("tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 		}
+		//fmt.Printf("appending frame = %p\n", frame)
+		//DisplayFrame(frame, i, false, false)
 		res = append(res, frame)
 	}
 	return res, nil
