@@ -1,4 +1,4 @@
 archiver
 =========
 
-This library demonstrates using the nats.io event bus to request storage of frames.
+This library demonstrates reading from the nats.io event bus and storing Frame events to files on disk.
