@@ -14,10 +14,11 @@ func Test020MergeSortStreams(t *testing.T) {
 		// setup the test streams, with interleaved Frames
 		nFrame := 100
 		expectedPath := "test.merge.expected"
-		frames, _, _ := GenTestFramesSequence(nFrame, &expectedPath)
+
+		frames, _, _ := GenTestFrames(nFrame, &expectedPath)
 
 		// deal into different piles, randomly
-		nPile := 3
+		nPile := 5
 		fds := make([]*os.File, nPile)
 		for i := 0; i < nPile; i++ {
 			fd, err := os.Create(fmt.Sprintf("test.merge.input.%v", i))
