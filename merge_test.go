@@ -13,7 +13,7 @@ func Test020MergeSortStreams(t *testing.T) {
 
 		// setup the test streams, with interleaved Frames
 		nFrame := 100
-		expectedPath := "test.mergesort.expected"
+		expectedPath := "test.merge.expected"
 		frames, _, _ := GenTestFramesSequence(nFrame, &expectedPath)
 
 		// deal into different piles, randomly
