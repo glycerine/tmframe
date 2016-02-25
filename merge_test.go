@@ -17,7 +17,7 @@ func Test020MergeSortStreams(t *testing.T) {
 		frames, _, _ := GenTestFramesSequence(nFrame, &expectedPath)
 
 		// deal into different piles, randomly
-		nPile := 110
+		nPile := 3
 		fds := make([]*os.File, nPile)
 		for i := 0; i < nPile; i++ {
 			fd, err := os.Create(fmt.Sprintf("test.merge.input.%v", i))
@@ -54,6 +54,11 @@ func Test020MergeSortStreams(t *testing.T) {
 			panic(fmt.Errorf("merge failed, '%s' != '%s'", obsPath, expectedPath))
 		}
 		cv.So(diff, cv.ShouldBeFalse)
+		os.Remove(obsPath)
+		os.Remove(expectedPath)
+		for i := 0; i < nPile; i++ {
+			os.Remove(fmt.Sprintf("test.merge.input.%v", i))
+		}
 	})
 }
 
