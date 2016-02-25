@@ -77,16 +77,20 @@ func (fw *FrameWriter) Append(f *Frame) {
 	fw.Frames = append(fw.Frames, f)
 }
 
-type FrameElem struct {
+type frameElem struct {
 	frame *Frame
 	bfr   *BufferedFrameReader
 	index int
 }
 
-type FrameSorter []*FrameElem
+// frameSorter is used to do the merge sort
+type frameSorter []*frameElem
 
-func (p FrameSorter) Len() int { return len(p) }
-func (p FrameSorter) Less(i, j int) bool {
+// Len is the sorting Len function
+func (p frameSorter) Len() int { return len(p) }
+
+// Less is the sorting Less function.
+func (p frameSorter) Less(i, j int) bool {
 	// sort nil to end
 	if p[i] == nil {
 		return false
@@ -96,25 +100,34 @@ func (p FrameSorter) Less(i, j int) bool {
 	}
 	return p[i].frame.Tm() < p[j].frame.Tm()
 }
-func (p FrameSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
+// Swap is the sorting Swap function.
+func (p frameSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+// Merge merges the strms input into timestamp order, based on
+// the Frame.Tm() timestamp, and writes the ordered sequence
+// out to the fw.Out io.writer.
 func (fw *FrameWriter) Merge(strms ...*BufferedFrameReader) error {
 
 	n := len(strms)
-	peeks := make([]*FrameElem, n)
+	peeks := make([]*frameElem, n)
 	for i := 0; i < n; i++ {
-		peeks[i] = &FrameElem{bfr: strms[i], index: i}
+		peeks[i] = &frameElem{bfr: strms[i], index: i}
 	}
 
 	var err error
 
 	// initialize the Frames in peeks
-	newlist := []*FrameElem{}
+	newlist := []*frameElem{}
 	for i := range peeks {
 		peeks[i].frame, err = peeks[i].bfr.Peek()
 		if err != nil {
-			// peeks[i].frame will be nil.
-			p("err = %v, omitting peeks[i=%v] from newlist", err, i)
+			if err == io.EOF {
+				// peeks[i].frame will be nil.
+				//p("err = %v, omitting peeks[i=%v] from newlist", err, i)
+			} else {
+				return err
+			}
 		} else {
 			newlist = append(newlist, peeks[i])
 		}
@@ -124,20 +137,24 @@ func (fw *FrameWriter) Merge(strms ...*BufferedFrameReader) error {
 	for len(peeks) > 0 {
 		if len(peeks) == 1 {
 			// just copy over the rest of this stream and we're done
-			p("down to just one (%v), copying it directly over", peeks[0].index)
+			//p("down to just one (%v), copying it directly over", peeks[0].index)
 			_, err = peeks[0].bfr.WriteTo(fw)
 			return err
 		}
 		// have 2 or more source left, sort and pick the earliest
-		sort.Sort(FrameSorter(peeks))
+		sort.Sort(frameSorter(peeks))
 		// copy frame and add it to fw
 		cp := *(peeks[0].frame)
 		fw.Append(&cp)
 		peeks[0].bfr.Advance()
 		peeks[0].frame, err = peeks[0].bfr.Peek()
 		if err != nil {
-			p("finished with stream %v", peeks[0].index)
-			peeks = peeks[1:]
+			if err == io.EOF {
+				//p("saw err '%v',  finished with stream %v", err, peeks[0].index)
+				peeks = peeks[1:]
+			} else {
+				return err
+			}
 		}
 	}
 	return nil
