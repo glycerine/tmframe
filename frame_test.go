@@ -197,7 +197,7 @@ func Test200FrameReader(t *testing.T) {
 		p("FrameReader.ReadNextFrame() should return io.EOF or empty []byte / stream at end of file")
 		var empty bytes.Buffer
 		fr := NewFrameReader(&empty, 64*1024)
-		nBytes, err := fr.PeekNextFrame()
+		nBytes, err := fr.PeekNextFrameBytes()
 		cv.So(nBytes, cv.ShouldEqual, 0)
 		cv.So(err, cv.ShouldEqual, io.EOF)
 		//		by, err = fr.ReadNextFrame(empty)
@@ -211,7 +211,7 @@ func Test200FrameReader(t *testing.T) {
 		panicOn(err)
 		buf8 := bytes.NewBuffer(b8)
 		fr = NewFrameReader(buf8, 64*1024)
-		nBytes, err = fr.PeekNextFrame()
+		nBytes, err = fr.PeekNextFrameBytes()
 		cv.So(nBytes, cv.ShouldEqual, 8)
 		cv.So(err, cv.ShouldEqual, nil)
 
