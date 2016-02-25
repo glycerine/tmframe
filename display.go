@@ -149,7 +149,7 @@ func (x JsonBytesAsStringExt) ConvertExt(v interface{}) interface{} {
 	default:
 		panic(fmt.Sprintf("unsupported format for JsonBytesAsStringExt conversion: expecting []byte; got %T", v))
 	}
-	return v
+	//return v
 }
 func (x JsonBytesAsStringExt) UpdateExt(dest interface{}, v interface{}) {
 	//Q("in JsonBytesAsStringExt.UpdateExt(): v is %T/val=%#v    dest is %T/val=%#v", v, v, dest, dest)
