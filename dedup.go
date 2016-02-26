@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nats-io/gnatsd/hashmap"
 	"io"
+	"os"
 )
 
 // Dedup dedups over a window of windowSize Frames a
@@ -56,6 +57,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer) error {
 				// value rolls out of the 'present' hash,
 				// meaning that the dup at index 4 would
 				// not be recognized.
+				fmt.Fprintf(os.Stderr, "\n dup: '%s'\n", frame.String())
 				ptr = p.(*dedup)
 				ptr.count++
 				if dupsWriter != nil {
