@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"github.com/nats-io/gnatsd/hashmap"
 	"io"
-	"os"
 )
+
+var DupDetected = fmt.Errorf("duplicate Frame detected")
 
 // Dedup dedups over a window of windowSize Frames a
 // stream of frames from r into w. dupsW can be nil. If
 // dupsW is supplied, recognized duplicate events will
 // be written to this io.Writer. If detectOnly
-// is true, we will halt with exit 1 and print
-// a message upon first detecting a duplicate. This
-// is useful for scanning for files that have
-// duplicated Frames.
+// is true, we will return DupDetected at the
+// first duplicate, to enable scanning a filesystem.
+//
 func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly bool) error {
 	fr := NewFrameReader(r, 1024*1024)
 	fw := NewFrameWriter(w, 1024*1024)
@@ -72,8 +72,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 				// not be recognized.
 
 				if detectOnly {
-					fmt.Printf("has-duplicates\n")
-					os.Exit(1)
+					return DupDetected
 				}
 				ptr = p.(*dedup)
 				ptr.count++

@@ -42,8 +42,9 @@ func main() {
 	}
 
 	var r io.Reader
+	var inputFile string
 	if n == 1 {
-		inputFile := leftover[0]
+		inputFile = leftover[0]
 
 		if !FileExists(inputFile) {
 			fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputFile)
@@ -54,6 +55,7 @@ func main() {
 		panicOn(err)
 		r = f
 	} else {
+		inputFile = "stdin"
 		r = os.Stdin
 	}
 
@@ -64,6 +66,10 @@ func main() {
 	}
 
 	err = tf.Dedup(r, os.Stdout, cfg.WindowSize, dupf, cfg.DetectOnly)
+	if cfg.DetectOnly && err == tf.DupDetected {
+		fmt.Printf("%s has-duplicates\n", inputFile)
+		os.Exit(1)
+	}
 	if err != nil {
 		panic(err)
 	}
