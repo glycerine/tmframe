@@ -21,7 +21,7 @@ func main() {
 	}
 	var r io.Reader
 	if n == 2 {
-		inputFile := os.Args[1:]
+		inputFile := os.Args[1]
 
 		if !FileExists(inputFile) {
 			fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputFile)
@@ -30,6 +30,7 @@ func main() {
 
 		f, err := os.Open(inputFile)
 		panicOn(err)
+		r = f
 	} else {
 		r = os.Stdin
 	}
