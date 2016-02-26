@@ -67,7 +67,7 @@ type Frame struct {
 
 	V0 float64 // primary float64 value, for EvOneFloat64 and EvTwo64
 
-	// Ude alternatively represents V1 for EvTwo64
+	// Ude alternatively represents V1 for EvTwo64 and EvOneInt64
 	// GetV1() to access as V1.
 	Ude int64 // the User-Defined-Encoding word
 
