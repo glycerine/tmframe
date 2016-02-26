@@ -50,7 +50,7 @@ func Test030DedupStreams(t *testing.T) {
 		// dedup the stream
 		// all of it, so we give the full total as the window
 		p("k = %v", k)
-		err = Dedup(hasDupsFd, dedupFd, k+1)
+		err = Dedup(hasDupsFd, dedupFd, k+1, nil)
 		cv.So(err, cv.ShouldEqual, nil)
 
 		// check

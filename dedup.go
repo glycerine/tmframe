@@ -7,10 +7,17 @@ import (
 )
 
 // Dedup dedups over a window of windowSize Frames a
-// stream of frames from r into w.
-func Dedup(r io.Reader, w io.Writer, windowSize int) error {
+// stream of frames from r into w. dupsW can be nil. If
+// dupsW is supplied, recognized duplicate events will
+// be written to this io.Writer.
+func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer) error {
 	fr := NewFrameReader(r, 1024*1024)
 	fw := NewFrameWriter(w, 1024*1024)
+
+	var dupsWriter *FrameWriter
+	if dupsW != nil {
+		dupsWriter = NewFrameWriter(dupsW, 1024*1024)
+	}
 
 	window := make([]*dedup, windowSize)
 	present := hashmap.New()
@@ -51,6 +58,9 @@ func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 				// not be recognized.
 				ptr = p.(*dedup)
 				ptr.count++
+				if dupsWriter != nil {
+					dupsWriter.Append(&frame)
+				}
 			}
 
 			if i >= windowSize {
@@ -68,10 +78,18 @@ func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 
 		if i%1000 == 999 {
 			fw.Flush()
+			if dupsWriter != nil {
+				dupsWriter.Flush()
+			}
 		}
 	}
 	fw.Flush()
 	fw.Sync()
+	if dupsWriter != nil {
+		dupsWriter.Flush()
+		dupsWriter.Sync()
+	}
+
 	return nil
 }
 

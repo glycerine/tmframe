@@ -2,6 +2,7 @@ package tm
 
 import (
 	"flag"
+	"fmt"
 )
 
 // configure the tfcat command utility
@@ -56,5 +57,31 @@ func (c *TfsortConfig) DefineFlags(fs *flag.FlagSet) {
 
 // call c.ValidateConfig() after myflags.Parse()
 func (c *TfsortConfig) ValidateConfig() error {
+	return nil
+}
+
+////////////////////////////
+// tfdedup
+
+// configure the tfdedup command utility
+type TfdedupConfig struct {
+	WriteDupsToFile string
+	WindowSize      int
+}
+
+// call DefineFlags before myflags.Parse()
+func (c *TfdedupConfig) DefineFlags(fs *flag.FlagSet) {
+	fs.StringVar(&c.WriteDupsToFile, "-dupsto", "", "write duplicates to this file path")
+	fs.IntVar(&c.WindowSize, "-window", 1000, "window size; number of Frames in a row to check for duplicates")
+}
+
+// call c.ValidateConfig() after myflags.Parse()
+func (c *TfdedupConfig) ValidateConfig() error {
+	if c.WriteDupsToFile != "" && FileExists(c.WriteDupsToFile) {
+		return fmt.Errorf("duplicates output file '%s' already exists, aborting.", c.WriteDupsToFile)
+	}
+	if c.WindowSize <= 1 {
+		return fmt.Errorf("-window %v illegal: must be positive integer > 1.", c.WindowSize)
+	}
 	return nil
 }
