@@ -178,8 +178,11 @@ func (fr *FrameReader) PeekNextFrameBytes() (nBytes int64, err error) {
 	switch pti {
 	case PtiZero:
 		return 8, nil
-	case PtiOne:
-		return 8, nil
+	case PtiOneInt64:
+		if nAvail < 16 {
+			return 0, err
+		}
+		return 16, nil
 	case PtiNull:
 		return 8, nil
 	case PtiNA:

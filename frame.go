@@ -19,7 +19,7 @@ type PTI byte
 
 const (
 	PtiZero       PTI = 0
-	PtiOne        PTI = 1
+	PtiOneInt64   PTI = 1
 	PtiOneFloat64 PTI = 2
 	PtiTwo64      PTI = 3
 	PtiNull       PTI = 4
@@ -41,7 +41,7 @@ const (
 	// only specify an Evtnum, and the framing code
 	// sets PTI and EVTNUM correctly.
 	EvZero       Evtnum = 0
-	EvOne        Evtnum = 1
+	EvOneInt64   Evtnum = 1
 	EvOneFloat64 Evtnum = 2
 	EvTwo64      Evtnum = 3
 	EvNull       Evtnum = 4
@@ -129,8 +129,8 @@ func (f *Frame) GetV0() float64 {
 	switch pti {
 	case PtiZero:
 		return 0
-	case PtiOne:
-		return 1
+	case PtiOneInt64:
+		return 0
 	case PtiOneFloat64:
 		return f.V0
 	case PtiTwo64:
@@ -164,8 +164,8 @@ func (f *Frame) NumBytes() int64 {
 	switch pti {
 	case PtiZero:
 		n = 8
-	case PtiOne:
-		n = 8
+	case PtiOneInt64:
+		n = 16
 	case PtiOneFloat64:
 		n = 16
 	case PtiTwo64:
@@ -206,6 +206,8 @@ func (f *Frame) Marshal(buf []byte) ([]byte, error) {
 	}
 	pti := f.GetPTI()
 	switch pti {
+	case PtiOneInt64:
+		binary.LittleEndian.PutUint64(m[8:16], uint64(f.Ude))
 	case PtiOneFloat64:
 		binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
 	case PtiTwo64:
@@ -252,9 +254,9 @@ func (f *Frame) Unmarshal(by []byte, copyData bool) (rest []byte, err error) {
 	case PtiZero:
 		f.V0 = 0.0
 		return by[8:], nil
-	case PtiOne:
-		f.V0 = 1.0
-		return by[8:], nil
+	case PtiOneInt64:
+		f.Ude = int64(binary.LittleEndian.Uint64(by[8:16]))
+		return by[16:], nil
 	case PtiOneFloat64:
 		if n < 16 {
 			return by, TooShortErr
@@ -376,8 +378,8 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	switch evtnum {
 	case EvZero:
 		pti = PtiZero
-	case EvOne:
-		pti = PtiOne
+	case EvOneInt64:
+		pti = PtiOneInt64
 	case EvOneFloat64:
 		pti = PtiOneFloat64
 	case EvTwo64:
@@ -405,8 +407,8 @@ func NewFrame(tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) (*
 	switch evtnum {
 	case EvZero:
 		f.V0 = 0.0
-	case EvOne:
-		f.V0 = 1.0
+	case EvOneInt64:
+		f.Ude = v1
 	case EvOneFloat64:
 		f.V0 = v0
 	case EvTwo64:
@@ -425,8 +427,8 @@ func (e Evtnum) String() string {
 		return "EvErr"
 	case EvZero:
 		return "EvZero"
-	case EvOne:
-		return "EvOne"
+	case EvOneInt64:
+		return "EvOneInt64"
 	case EvOneFloat64:
 		return "EvOneFloat64"
 	case EvTwo64:
@@ -472,6 +474,8 @@ func (f Frame) String() string {
 	pti := f.GetPTI()
 
 	switch pti {
+	case PtiOneInt64:
+		s += fmt.Sprintf(" V1:%v", f.Ude)
 	case PtiOneFloat64:
 		s += fmt.Sprintf(" V0:%v", f.V0)
 	case PtiTwo64:
@@ -513,6 +517,9 @@ func (f *Frame) Blake2b() []byte {
 	default:
 		pti := f.GetPTI()
 		switch pti {
+		case PtiOneInt64:
+			binary.LittleEndian.PutUint64(m[8:16], uint64(f.Ude))
+			h.Write(m[:16])
 		case PtiOneFloat64:
 			binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
 			h.Write(m[:16])

@@ -48,7 +48,7 @@ a) primary word only
 
 ~~~
 +---------------------------------------------------------------+
-|      primary word (64-bits) with PTI={0, 1, 4, 5, or 6}       |
+|      primary word (64-bits) with PTI={0, 4, 5, or 6}       |
 +---------------------------------------------------------------+
 ~~~
 
@@ -80,7 +80,18 @@ There are also two special payload types that are not UDE based.
 They handle the common case of attaching one or two
 64-bit values to a timestamp.
 
-d) primary word + one float64
+d) primary word + one int64
+
+~~~
++---------------------------------------------------------------+
+|                primary word (64-bits) with PTI=1              |
++---------------------------------------------------------------+
+|                     V1 (int64)                                |
++---------------------------------------------------------------+
+~~~
+
+
+e) primary word + one float64
 
 ~~~
 +---------------------------------------------------------------+
@@ -90,7 +101,7 @@ d) primary word + one float64
 +---------------------------------------------------------------+
 ~~~
 
-e) primary word + one float64 + one int64
+f) primary word + one float64 + one int64
 
 ~~~
 +---------------------------------------------------------------+
@@ -150,17 +161,23 @@ PTI (3 bits) = Payload type indicator, decoded as follows:
          By convention, the 0 value can indicate the
          payload false for boolean series.
 
-    1 => value of 1 (or by convention, a value of true for boolean series).
-
-         The primary word is the only word in this message.
+    1 => exactly one 64-bit int64 payload value follows.
+         The message has exactly two 64-bit words.
+         The payload is known as V1.
 
     2 => exactly one 64-bit float64 payload value follows.
          Nmemonic: The total number of 64-bit words in the message is 2.
-         
-    3 => exactly two 64-bit float64 payload values follow.
+         The payload is known as V0.
+
+    3 => exactly two 64-bit payload values follow, one float64 and one int64.
          Nmemonic: The total number of 64-bit words in the message is 3.
-         
+         The payload components are known as V0 (the float64), and
+         V1 (the int64).
+
     4 => NULL: the null-value, a known and intentionally null value. Written as NULL.
+
+         NB By convention, for a strictly boolean series, PTI=4 is the true value,
+         while PTI=0 is the false value.
 
          The primary word is the only word in this message.
 
@@ -249,7 +266,8 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
                To provide documentation for the NewFrame() calls
                evtnum formal parameter, we will restate the encoding here:
 
-               1 => EvOne, the payload is defined to be the value 1.
+               1 => EvOneInt64, the payload is defined to be the
+                    following int64 value.
                2 => EvOneFloat64, the payload will be the
                     following float64 value.
                3 => EvTwo64, the payload will be the float64
