@@ -66,9 +66,13 @@ func main() {
 	}
 
 	err = tf.Dedup(r, os.Stdout, cfg.WindowSize, dupf, cfg.DetectOnly)
-	if cfg.DetectOnly && err == tf.DupDetected {
-		fmt.Printf("%s has-duplicates\n", inputFile)
-		os.Exit(1)
+	if cfg.DetectOnly {
+		if err == tf.DupDetected {
+			fmt.Printf("%s has-duplicates\n", inputFile)
+			os.Exit(1)
+		} else if err == nil {
+			fmt.Printf("\n")
+		}
 	}
 	if err != nil {
 		panic(err)
