@@ -9,7 +9,7 @@ import (
 )
 
 func showUse(myflags *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, "%s sorts each TMFRAME `file` into `file.sorted`. If more than one file is named, the files are merged and written to stdout. Usage: %s <file_to_sort>+\n", os.Args[0], os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s sorts each TMFRAME `file` into temp file `file.sorted`. Then files are merged and written to stdout. Temp files are deleted unless -k is given. Usage: %s {-k} <file_to_sort>+\n", os.Args[0], os.Args[0])
 	myflags.PrintDefaults()
 }
 
@@ -23,7 +23,7 @@ var GlobalPrettyPrint bool
 
 func main() {
 	myflags := flag.NewFlagSet("tfsort", flag.ExitOnError)
-	cfg := &tf.TfindexConfig{}
+	cfg := &tf.TfsortConfig{}
 	cfg.DefineFlags(myflags)
 
 	err := myflags.Parse(os.Args[1:])
@@ -41,6 +41,7 @@ func main() {
 	}
 
 	wrote := []*os.File{}
+	wroteTmp := []string{}
 	for _, inputFile := range leftover {
 		//P("starting on inputFile '%s'", inputFile)
 		if !FileExists(inputFile) {
@@ -57,6 +58,7 @@ func main() {
 		of, err := os.Create(writeFile)
 		panicOn(err)
 		wrote = append(wrote, of)
+		wroteTmp = append(wroteTmp, writeFile)
 
 		fw := tf.NewFrameWriter(of, 1024*1024)
 		fw.Frames = frames
@@ -80,5 +82,11 @@ func main() {
 	err = outputStream.Merge(strms...)
 	outputStream.Sync()
 	panicOn(err)
+
+	if !cfg.KeepTmpFiles {
+		for _, w := range wroteTmp {
+			os.Remove(w)
+		}
+	}
 
 }

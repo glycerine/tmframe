@@ -40,3 +40,21 @@ func (c *TfindexConfig) DefineFlags(fs *flag.FlagSet) {
 func (c *TfindexConfig) ValidateConfig() error {
 	return nil
 }
+
+////////////////////////////
+// tfsort
+
+// configure the tfsort command utility
+type TfsortConfig struct {
+	KeepTmpFiles bool
+}
+
+// call DefineFlags before myflags.Parse()
+func (c *TfsortConfig) DefineFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&c.KeepTmpFiles, "k", false, "keep .sorted intermediate temp files")
+}
+
+// call c.ValidateConfig() after myflags.Parse()
+func (c *TfsortConfig) ValidateConfig() error {
+	return nil
+}
