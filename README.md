@@ -11,6 +11,13 @@ aren't that accurate.
 So we replace those 3 bits with a useful data
 payload to get a highly compressed timeseries format.
 
+VERSION: This spec is version 2016-Feb-26, which
+revises the original definition of PTI=1 by changing PTI=1
+into a 16 byte message to support a single int64 payload.
+This change facilitates indexing. The convention for
+boolean series is now to use PTI=4 for true and PTI=0
+for false.
+
 specification
 =============
 
