@@ -14,7 +14,8 @@ var DupDetected = fmt.Errorf("duplicate Frame detected")
 // be written to this io.Writer. If detectOnly
 // is true, we will return DupDetected at the
 // first duplicate, to enable scanning a filesystem.
-//
+// With detectOnly set, no dedupped output Frames
+// are written.
 func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly bool) error {
 	fr := NewFrameReader(r, 1024*1024)
 	fw := NewFrameWriter(w, 1024*1024)
@@ -52,7 +53,9 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 			p := present.Get(hash)
 			if p == nil {
 				// not already seen
-				fw.Append(&frame)
+				if !detectOnly {
+					fw.Append(&frame)
+				}
 				// memorize the new
 				ptr = &dedup{count: 1, hash: hash}
 				present.Set(hash, ptr)
@@ -77,7 +80,9 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 				ptr = p.(*dedup)
 				ptr.count++
 				if dupsWriter != nil {
-					dupsWriter.Append(&frame)
+					if !detectOnly {
+						dupsWriter.Append(&frame)
+					}
 				}
 			}
 
