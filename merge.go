@@ -15,6 +15,12 @@ type FrameWriter struct {
 	buf    []byte
 }
 
+// Flush writes any buffered b.Frames to b.Out.
+func (b *FrameWriter) Flush() error {
+	_, err := b.WriteTo(b.Out)
+	return err
+}
+
 // WriteTo writes any buffered frames pending
 // in the FrameWriter to w and returns the number of bytes n
 // written along with any error encountered during writing.
