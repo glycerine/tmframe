@@ -24,3 +24,19 @@ func (c *TfcatConfig) DefineFlags(fs *flag.FlagSet) {
 func (c *TfcatConfig) ValidateConfig() error {
 	return nil
 }
+
+////////////////////////////
+// tfindex
+
+// configure the tfindex command utility
+type TfindexConfig struct {
+}
+
+// call DefineFlags before myflags.Parse()
+func (c *TfindexConfig) DefineFlags(fs *flag.FlagSet) {
+}
+
+// call c.ValidateConfig() after myflags.Parse()
+func (c *TfindexConfig) ValidateConfig() error {
+	return nil
+}
