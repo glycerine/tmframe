@@ -71,8 +71,8 @@ type TfdedupConfig struct {
 
 // call DefineFlags before myflags.Parse()
 func (c *TfdedupConfig) DefineFlags(fs *flag.FlagSet) {
-	fs.StringVar(&c.WriteDupsToFile, "-dupsto", "", "write duplicates to this file path")
-	fs.IntVar(&c.WindowSize, "-window", 1000, "window size; number of Frames in a row to check for duplicates")
+	fs.StringVar(&c.WriteDupsToFile, "dupsto", "", "write duplicates to this file path")
+	fs.IntVar(&c.WindowSize, "window", 1000, "window size; number of Frames in a row to check for duplicates")
 }
 
 // call c.ValidateConfig() after myflags.Parse()
