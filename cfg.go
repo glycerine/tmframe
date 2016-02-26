@@ -67,12 +67,15 @@ func (c *TfsortConfig) ValidateConfig() error {
 type TfdedupConfig struct {
 	WriteDupsToFile string
 	WindowSize      int
+	DetectOnly      bool
 }
 
 // call DefineFlags before myflags.Parse()
 func (c *TfdedupConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.StringVar(&c.WriteDupsToFile, "dupsto", "", "write duplicates to this file path")
 	fs.IntVar(&c.WindowSize, "window", 1000, "window size; number of Frames in a row to check for duplicates")
+	fs.BoolVar(&c.DetectOnly, "detect", false, "detect duplicates and announce that "+
+		"fact, but do not write any Frame output")
 }
 
 // call c.ValidateConfig() after myflags.Parse()

@@ -63,7 +63,7 @@ func main() {
 		panicOn(err)
 	}
 
-	err = tf.Dedup(r, os.Stdout, cfg.WindowSize, dupf)
+	err = tf.Dedup(r, os.Stdout, cfg.WindowSize, dupf, cfg.DetectOnly)
 	if err != nil {
 		panic(err)
 	}
