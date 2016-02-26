@@ -16,7 +16,11 @@ revises the original definition of PTI=1 by changing PTI=1
 into a 16 byte message to support a single int64 payload.
 This change facilitates indexing. The convention for
 boolean series is now to use PTI=4 for true and PTI=0
-for false.
+for false. All implementations should update
+immediately to reflect this change, and the old
+behavior is now completely unsupported and illegal.
+The reference Go implementation in this repository
+reflects this update.
 
 specification
 =============
