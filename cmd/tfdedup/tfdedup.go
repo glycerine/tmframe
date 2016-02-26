@@ -59,7 +59,7 @@ func main() {
 
 	var dupf *os.File
 	if cfg.WriteDupsToFile != "" {
-		dupf, err = os.Open(cfg.WriteDupsToFile)
+		dupf, err = os.Create(cfg.WriteDupsToFile)
 		panicOn(err)
 	}
 
