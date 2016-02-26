@@ -20,7 +20,8 @@ for false. All implementations should update
 immediately to reflect this change, and the old
 behavior is now completely unsupported and illegal.
 The reference Go implementation in this repository
-reflects this update.
+reflects this update. This notice will be removed
+shortly.
 
 specification
 =============
