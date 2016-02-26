@@ -1,8 +1,8 @@
-package tm
+package main
 
 import (
-	"flag"
 	"fmt"
+	tf "github.com/glycerine/tmframe"
 	"io"
 	"os"
 )
@@ -34,30 +34,8 @@ func main() {
 		r = os.Stdin
 	}
 
-	fr := NewFrameReader(r, 1024*1024)
-	fw := NewFrameWriter(os.Stdout, 1024*1024)
-
-	var err error
-	for i := 0; err == nil; i++ {
-		var frame tf.Frame
-		_, _, err = fr.NextFrame(&frame)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Fprintf(os.Stderr, "dedup error from fr.NextFrame(): '%v'\n", err)
-				os.Exit(1)
-			}
-		} else {
-			fw.Append(frame)
-		}
-		if i%1000 == 999 {
-			fw.Flush()
-		}
+	err := tf.Dedup(r, os.Stdout)
+	if err != nil {
+		panic(err)
 	}
-	fw.Flush()
-	fw.Sync()
-}
-
-type Deduper struct {
-	Frame *Frame
-	Hash  []byte
 }
