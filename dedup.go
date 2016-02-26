@@ -6,13 +6,25 @@ import (
 	"io"
 )
 
-var DupDetected = fmt.Errorf("duplicate Frame detected")
+type DupDetectedErr struct {
+	Msg string
+}
+
+func (dd *DupDetectedErr) Error() string {
+	return dd.Msg
+}
+
+func NewDupDetectedErr(msg string) *DupDetectedErr {
+	return &DupDetectedErr{
+		Msg: msg,
+	}
+}
 
 // Dedup dedups over a window of windowSize Frames a
 // stream of frames from r into w. dupsW can be nil. If
 // dupsW is supplied, recognized duplicate events will
 // be written to this io.Writer. If detectOnly
-// is true, we will return DupDetected at the
+// is true, we will return a DupDetectedErr at the
 // first duplicate, to enable scanning a filesystem.
 // With detectOnly set, no dedupped output Frames
 // are written.
@@ -75,7 +87,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 				// not be recognized.
 
 				if detectOnly {
-					return DupDetected
+					return NewDupDetectedErr(frame.Stringify(int64(i), false, true))
 				}
 				ptr = p.(*dedup)
 				ptr.count++

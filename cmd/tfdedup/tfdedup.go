@@ -67,8 +67,9 @@ func main() {
 
 	err = tf.Dedup(r, os.Stdout, cfg.WindowSize, dupf, cfg.DetectOnly)
 	if cfg.DetectOnly {
-		if err == tf.DupDetected {
-			fmt.Printf("%s has-duplicates\n", inputFile)
+		asDup, isDup := err.(*tf.DupDetectedErr)
+		if isDup {
+			fmt.Printf("%s has-duplicate: %s\n", inputFile, asDup)
 			os.Exit(1)
 		} else if err == nil {
 			fmt.Printf("\n")

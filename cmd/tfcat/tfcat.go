@@ -86,7 +86,7 @@ nextfile:
 				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			tf.DisplayFrame(&frame, i, cfg.PrettyPrint, cfg.SkipPayload)
+			frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload)
 		}
 	}
 }
@@ -131,7 +131,7 @@ nextFrame:
 			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
 			os.Exit(1)
 		}
-		tf.DisplayFrame(&frame, i, cfg.PrettyPrint, cfg.SkipPayload)
+		frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload)
 		i++
 	}
 }

@@ -5,29 +5,69 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ugorji/go/codec"
+	"io"
 	"reflect"
 	"time"
 )
 
 // display and pretty print message payloads in json/msgpack format.
 
-// DisplayFrame prints a frame to os.Stdout, along with optional number i.
+// DisplayFrame prints a frame to w (e.g. pass os.Stdout as w),
+// along with optional number i.
+//
 // If i < 0, the i is not printed. If prettyPrint is true and the payload
 // is json or msgpack, we will display in an easier to ready pretty-printed
 // json format. If skipPayload is true we will only print the Frame header
 // information.
-func DisplayFrame(frame *Frame, i int64, prettyPrint bool, skipPayload bool) {
+func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPayload bool) {
 
 	if i >= 0 {
-		fmt.Printf("%06d %s", i, frame.String())
+		fmt.Fprintf(w, "%06d %s", i, frame.String())
 	} else {
-		fmt.Printf("%s", frame.String())
+		fmt.Fprintf(w, "%s", frame.String())
 	}
 	if !skipPayload {
 		evtnum := frame.GetEvtnum()
 		if evtnum == EvJson {
 			pp := prettyPrintJson(prettyPrint, frame.Data)
-			fmt.Printf("  %s", string(pp))
+			fmt.Fprintf(w, "  %s", string(pp))
+		}
+		if evtnum == EvMsgpKafka || evtnum == EvMsgpack {
+			// decode msgpack to json with ugorji/go/codec
+
+			var iface interface{}
+			dec := codec.NewDecoderBytes(frame.Data, &msgpHelper.mh)
+			err := dec.Decode(&iface)
+			panicOn(err)
+
+			//Q("iface = '%#v'", iface)
+
+			var wbuf bytes.Buffer
+			enc := codec.NewEncoder(&wbuf, &msgpHelper.jh)
+			err = enc.Encode(&iface)
+			panicOn(err)
+			pp := prettyPrintJson(prettyPrint, wbuf.Bytes())
+			fmt.Fprintf(w, " %s", string(pp))
+		}
+	}
+	fmt.Fprintf(w, "\n")
+}
+
+// StringifyFrame is like DisplayFrame but it returns
+// a string.
+func (frame *Frame) Stringify(i int64, prettyPrint bool, skipPayload bool) string {
+	var s string
+
+	if i >= 0 {
+		s += fmt.Sprintf("%06d %s", i, frame.String())
+	} else {
+		s += fmt.Sprintf("%s", frame.String())
+	}
+	if !skipPayload {
+		evtnum := frame.GetEvtnum()
+		if evtnum == EvJson {
+			pp := prettyPrintJson(prettyPrint, frame.Data)
+			s += fmt.Sprintf("  %s", string(pp))
 		}
 		if evtnum == EvMsgpKafka || evtnum == EvMsgpack {
 			// decode msgpack to json with ugorji/go/codec
@@ -44,10 +84,10 @@ func DisplayFrame(frame *Frame, i int64, prettyPrint bool, skipPayload bool) {
 			err = enc.Encode(&iface)
 			panicOn(err)
 			pp := prettyPrintJson(prettyPrint, w.Bytes())
-			fmt.Printf(" %s", string(pp))
+			s += fmt.Sprintf(" %s", string(pp))
 		}
 	}
-	fmt.Printf("\n")
+	return s
 }
 
 func prettyPrintJson(doPretty bool, input []byte) []byte {
