@@ -23,6 +23,15 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer) error {
 	window := make([]*dedup, windowSize)
 	present := hashmap.New()
 
+	defer func() {
+		fw.Flush()
+		fw.Sync()
+		if dupsWriter != nil {
+			dupsWriter.Flush()
+			dupsWriter.Sync()
+		}
+	}()
+
 	var err error
 	var ptr *dedup
 	for i := 0; err == nil; i++ {
@@ -85,13 +94,6 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer) error {
 			}
 		}
 	}
-	fw.Flush()
-	fw.Sync()
-	if dupsWriter != nil {
-		dupsWriter.Flush()
-		dupsWriter.Sync()
-	}
-
 	return nil
 }
 
