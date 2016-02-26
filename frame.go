@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/codahale/blake2"
 	"math"
 	"time"
 )
@@ -489,4 +490,42 @@ func FramesEqual(a, b *Frame) bool {
 	bbuf, err := b.Marshal(nil)
 	panicOn(err)
 	return 0 == bytes.Compare(abuf, bbuf)
+}
+
+// Blake2b returns the 64-byte BLAKE2b cryptographic
+// hash of the Frame. This is useful for hashing and
+// de-duplicating a stream of Frames.
+//
+// reference: https://godoc.org/github.com/codahale/blake2
+// reference: https://blake2.net/
+// reference: https://tools.ietf.org/html/rfc7693
+//
+func (f *Frame) Blake2b() []byte {
+	h := blake2.New(nil)
+
+	n := f.NumBytes()
+
+	var m [24]byte
+	binary.LittleEndian.PutUint64(m[:8], uint64(f.Prim))
+	switch {
+	case n == 8:
+		h.Write(m[:8])
+	default:
+		pti := f.GetPTI()
+		switch pti {
+		case PtiOneFloat64:
+			binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
+			h.Write(m[:16])
+		case PtiTwo64:
+			binary.LittleEndian.PutUint64(m[8:16], math.Float64bits(f.V0))
+			binary.LittleEndian.PutUint64(m[16:24], uint64(f.Ude))
+			h.Write(m[:24])
+		case PtiUDE:
+			binary.LittleEndian.PutUint64(m[8:16], uint64(f.Ude))
+			h.Write(m[:16])
+			h.Write(f.Data)
+		}
+	}
+
+	return []byte(h.Sum(nil))
 }
