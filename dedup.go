@@ -6,7 +6,9 @@ import (
 	"os"
 )
 
-func Dedup(r io.Reader, w io.Writer) error {
+// Dedup dedups over a window of windowSize Frames a
+// stream of frames from r into w.
+func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 	fr := NewFrameReader(r, 1024*1024)
 	fw := NewFrameWriter(w, 1024*1024)
 
@@ -16,8 +18,7 @@ func Dedup(r io.Reader, w io.Writer) error {
 		_, _, err = fr.NextFrame(&frame)
 		if err != nil {
 			if err != io.EOF {
-				fmt.Fprintf(os.Stderr, "dedup error from fr.NextFrame(): '%v'\n", err)
-				os.Exit(1)
+				return fmt.Errorf("dedup error from fr.NextFrame(): '%v'", err)
 			}
 		} else {
 			fw.Append(&frame)
@@ -31,7 +32,8 @@ func Dedup(r io.Reader, w io.Writer) error {
 	return nil
 }
 
-type Deduper struct {
-	Frame *Frame
-	Hash  []byte
+// deduper is used during dedup.
+type deduper struct {
+	frame *Frame
+	hash  []byte
 }
