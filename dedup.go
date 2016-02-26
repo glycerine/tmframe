@@ -16,6 +16,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 	present := hashmap.New()
 
 	var err error
+	var ptr *dedup
 	for i := 0; err == nil; i++ {
 		var frame Frame
 		_, _, err = fr.NextFrame(&frame)
@@ -27,8 +28,8 @@ func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 
 			// got a frame, check if it is a dup
 			hash := frame.Blake2b()
-			ptr := present.Get(hash).(*dedup)
-			if ptr == nil {
+			p := present.Get(hash)
+			if p == nil {
 				// not already seen
 				fw.Append(&frame)
 				// memorize the new
@@ -48,6 +49,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int) error {
 				// value rolls out of the 'present' hash,
 				// meaning that the dup at index 4 would
 				// not be recognized.
+				ptr = p.(*dedup)
 				ptr.count++
 			}
 
