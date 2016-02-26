@@ -35,7 +35,7 @@ func main() {
 		r = os.Stdin
 	}
 
-	err := tf.Dedup(r, os.Stdout)
+	err := tf.Dedup(r, os.Stdout, 1000)
 	if err != nil {
 		panic(err)
 	}

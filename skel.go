@@ -3,7 +3,6 @@ package tm
 import (
 	"fmt"
 	"io"
-	"os"
 )
 
 //
