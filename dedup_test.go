@@ -8,7 +8,7 @@ import (
 )
 
 func Test030DedupStreams(t *testing.T) {
-	cv.Convey(`given a stream with duplicate frames, Dedup() filter out duplicates within the given window`, t, func() {
+	cv.Convey(`given a stream with some duplicate frames repeating previously seen frames, Dedup() filter out duplicates within the given window`, t, func() {
 
 		// setup the test streams, with duplicated Frames
 		nFrame := 100
@@ -22,10 +22,13 @@ func Test030DedupStreams(t *testing.T) {
 		panicOn(err)
 		ds := NewFrameWriter(writeMe, 64*1024)
 
-		// generate duplictes, randomly
+		// generate duplicates, randomly
 		fold := 4
 		tot := nFrame * fold
 		k := 0
+
+		// first be sure we've seen all our frames, so we
+		// aren't jumping completely backwards before the first frame.
 		for i := 0; i < nFrame; i++ {
 			ds.Append(frames[i])
 			k++
