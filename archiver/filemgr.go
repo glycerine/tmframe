@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// the "/" path seperator on osx/linux.
+var sep = string(os.PathSeparator)
+
 // ServiceName is how this service is addressed on the Nats bus.
 var ServiceName = "service-name"
 
@@ -46,8 +49,8 @@ type File struct {
 type FileMgr struct {
 	Cfg   ArchiverConfig
 	Files map[string]*File
-	Ready chan bool
 
+	Ready   chan bool
 	ReqStop chan bool
 	Done    chan bool
 
@@ -100,6 +103,15 @@ func (fm *FileMgr) GetPath(tm time.Time, streamName string) string {
 	return path
 }
 
+// XtraDirs allows better scalabilty for directory file counts by adding a
+// 3 layer deep directory hierarchy.
+func XtraDirs(id string) string {
+	a := string(id[0])
+	b := string(id[1])
+	c := string(id[2])
+	return fmt.Sprintf("%s%s%s%s%s%s%s%s", a, sep, b, sep, c, sep, id, sep)
+}
+
 func (fm *FileMgr) Store(tm time.Time, streamName string, data []byte) (f *File, err error) {
 	q("starting Store() for streamName '%s' with data len = %v", streamName, len(data))
 	if len(data) == 0 {
@@ -125,6 +137,11 @@ func (fm *FileMgr) Store(tm time.Time, streamName string, data []byte) (f *File,
 			if err != nil {
 				return nil, fmt.Errorf("FileMgr.Store() error opening path '%s': '%s'", pth, err)
 			}
+			if NoLockErr == LockFile(fd) {
+				fd.Close()
+				return nil, fmt.Errorf("FileMgr.Store() error opening path '%s': "+
+					"already flocked by another process.", pth)
+			}
 			// move to end to appending
 			_, err = fd.Seek(0, 2)
 			if err != nil {
@@ -139,6 +156,12 @@ func (fm *FileMgr) Store(tm time.Time, streamName string, data []byte) (f *File,
 			if err != nil {
 				return nil, fmt.Errorf("FileMgr.Store() error creating path '%s': '%s'", pth, err)
 			}
+			if NoLockErr == LockFile(fd) {
+				fd.Close()
+				return nil, fmt.Errorf("FileMgr.Store() error opening path '%s': "+
+					"already flocked by another process -- odd as we just Create()-ed this file.", pth)
+			}
+
 		}
 		// INVAR: fd good to go.
 		f = &File{
@@ -199,6 +222,7 @@ func (fm *FileMgr) CloseUnusedFiles(olderThan time.Duration) {
 		if time.Since(v.LastWrite) > olderThan {
 			v.Fd.Sync()
 			v.Fd.Close()
+			UnlockFile(v.Fd)
 			delme = append(delme, key)
 		}
 	}
@@ -211,6 +235,7 @@ func (fm *FileMgr) SyncAndCloseAllFiles() {
 	for _, v := range fm.Files {
 		v.Fd.Sync()
 		v.Fd.Close()
+		UnlockFile(v.Fd)
 	}
 	// clear the map
 	fm.Files = make(map[string]*File)
@@ -411,4 +436,16 @@ func ExtractStreamFromSubject(subj string) (stream string, id string) {
 		return splt[2], strings.Join(splt[3:], ".")
 	}
 	return "", ""
+}
+
+func GetYearMonthDayString(tm time.Time) (string, Date) {
+	date := TimeToDate(tm)
+	path := path.Join(fmt.Sprintf("%04d", date.Year), fmt.Sprintf("%02d", date.Month), fmt.Sprintf("%02d", date.Day))
+	return path, date
+}
+
+func GetYearMonthString(tm time.Time) (string, Date) {
+	date := TimeToDate(tm)
+	path := path.Join(fmt.Sprintf("%04d", date.Year), fmt.Sprintf("%02d", date.Month))
+	return path, date
 }
