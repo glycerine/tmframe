@@ -561,7 +561,7 @@ func NewMarshalledFrame(writeHere []byte, tm time.Time, evtnum Evtnum, v0 float6
 // The marshalled frame's bytes are returned, along with
 // any error encountered.
 func NewMsgpackFrame(tm time.Time, m msgp.Marshaler, buf []byte) ([]byte, error) {
-	bts, err := m.MarshalMsg(nil)
+	bts, err := m.MarshalMsg(buf)
 	if err != nil {
 		return nil, err
 	}
