@@ -261,3 +261,44 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 	}
 	return fillme, need, nil
 }
+
+// NextFrameBytes is like NextFrame but avoids Unmarshalling
+// and so can be more efficient. NextFrameBytes reads
+// the next frame into fillme if provided, but
+// does not Unmarshal it; only the raw bytes of the frame are copied
+// into fillme. If fillme is nil, NextFrameBytes allocates a new byte
+// slice, copies the raw bytes for the next frame in, and returns it
+// as nextbytes.
+func (fr *FrameReader) NextFrameBytes(fillme []byte) (nextbytes []byte, err error) {
+	need, err := fr.PeekNextFrameBytes()
+	if err != nil {
+		return nil, err
+	}
+	if need > fr.maxFrameBytes {
+		return nil, FrameTooLargeErr
+	}
+	if need == 0 {
+		return nil, io.EOF
+	}
+
+	// read 'need' number of bytes, or get an IO error
+	var got int64
+	var m int
+	for got != need {
+		m, err = fr.r.Read(fr.by[got:need])
+		got += int64(m)
+		if got == need {
+			err = nil
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(fillme) == 0 {
+		fillme = make([]byte, need)
+	}
+	copy(fillme, fr.by[:need])
+	return fillme, nil
+}
