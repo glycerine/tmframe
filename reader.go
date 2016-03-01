@@ -16,7 +16,7 @@ import (
 //////////////////////////////////////////////////
 
 // BufferedFrameReader supports PeekFrame(), Advance(),
-// and ReadOne() that help the merging (merge sorting) two streams.
+// and ReadOne() that help in merging (merge sorting) two streams.
 type BufferedFrameReader struct {
 	reader   *FrameReader
 	next     *Frame
