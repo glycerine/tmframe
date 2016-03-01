@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/codahale/blake2"
+	"github.com/tinylib/msgp/msgp"
 	"math"
 	"time"
 )
@@ -549,4 +550,20 @@ func NewMarshalledFrame(writeHere []byte, tm time.Time, evtnum Evtnum, v0 float6
 		return nil, err
 	}
 	return frm.Marshal(writeHere)
+}
+
+// NewMsgpackFrame is a convenience method, taking a
+// method that has had github.com/tinylib/msgp code
+// generated for it. Such code will have an  msgp.Marshaler
+// implementation defined by the generated code.
+// The provided buf will be used if it has sufficient space,
+// but is optional and can be nil.
+// The marshalled frame's bytes are returned, along with
+// any error encountered.
+func NewMsgpackFrame(tm time.Time, m msgp.Marshaler, buf []byte) ([]byte, error) {
+	bts, err := m.MarshalMsg(nil)
+	if err != nil {
+		return nil, err
+	}
+	return NewMarshalledFrame(nil, time.Now(), EvMsgpack, 0, 0, bts)
 }
