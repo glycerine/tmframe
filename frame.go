@@ -536,3 +536,17 @@ func (f *Frame) Blake2b() []byte {
 
 	return []byte(h.Sum(nil))
 }
+
+// NewMarshalledFrame creates a frame already marshalled into the
+// writeHere buffer, assuming that writeHere is large enough.
+// It returns the marshalled frame as bytes, and any error.
+// Effectively this is a convenience combination of NewFrame()
+// followed by Marshal().
+func NewMarshalledFrame(writeHere []byte, tm time.Time, evtnum Evtnum, v0 float64, v1 int64, data []byte) ([]byte, error) {
+
+	frm, err := NewFrame(tm, evtnum, v0, v1, data)
+	if err != nil {
+		return nil, err
+	}
+	return frm.Marshal(writeHere)
+}
