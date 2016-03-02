@@ -138,13 +138,7 @@ nextFrame:
 
 // copy the raw TMFRAME bytes of messageCount messages read from
 // inputPath to w
-func SendRawBytes(inputPath string, messageCount int, w io.Writer, skipCount int) {
-
-	var isTail bool
-	if skipCount > 0 {
-		isTail = true
-		messageCount = skipCount
-	}
+func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameCount int) {
 
 	if !FileExists(inputPath) {
 		fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputPath)
@@ -157,31 +151,34 @@ func SendRawBytes(inputPath string, messageCount int, w io.Writer, skipCount int
 
 	fr := tf.NewFrameReader(f, 1024*1024)
 	var frame tf.Frame
-	byteCount := int64(0)
+	skipByteCount := int64(0)
+	writeByteCount := int64(0)
 
-	for i := 0; i < messageCount; i++ {
+	for i := 0; i < skipFrameCount; i++ {
 		_, nbytes, err := fr.NextFrame(&frame)
 		if err != nil {
 			panic(err)
 			//os.Exit(0)
 		}
-		byteCount += nbytes
+		skipByteCount += nbytes
 	}
 
-	if isTail {
-		_, err = f.Seek(byteCount, 0)
-		panicOn(err)
-		_, err = io.Copy(w, f)
-	} else {
-
-		// seek back to beginning to copy just those bytes
-		_, err = f.Seek(0, 0)
-		panicOn(err)
-		var wrote int64
-		wrote, err = io.CopyN(w, f, byteCount)
-		if wrote != byteCount {
-			panic(fmt.Sprintf("short write: %v vs %v expected", wrote, byteCount))
+	for i := 0; i < writeFrameCount; i++ {
+		_, nbytes, err := fr.NextFrame(&frame)
+		if err != nil {
+			panic(err)
+			//os.Exit(0)
 		}
+		writeByteCount += nbytes
+	}
+
+	// seek back to beginning to copy just those bytes
+	_, err = f.Seek(skipByteCount, 0)
+	panicOn(err)
+	var wrote int64
+	wrote, err = io.CopyN(w, f, writeByteCount)
+	if wrote != writeByteCount {
+		panic(fmt.Sprintf("short write: %v vs %v expected", wrote, writeByteCount))
 	}
 	panicOn(err)
 }
