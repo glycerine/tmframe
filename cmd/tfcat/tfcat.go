@@ -172,13 +172,21 @@ func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameC
 		writeByteCount += nbytes
 	}
 
+	//fmt.Fprintf(os.Stderr, "skipByteCount: %v, writeByteCount: %v, skipFramCount: %v, writeFrameCount: %v\n", skipByteCount, writeByteCount, skipFrameCount, writeFrameCount)
+
 	// seek back to beginning to copy just those bytes
 	_, err = f.Seek(skipByteCount, 0)
 	panicOn(err)
-	var wrote int64
-	wrote, err = io.CopyN(w, f, writeByteCount)
-	if wrote != writeByteCount {
-		panic(fmt.Sprintf("short write: %v vs %v expected", wrote, writeByteCount))
+	if writeFrameCount == 0 {
+		// write them all
+		_, err = io.Copy(w, f)
+		panicOn(err)
+	} else {
+		var wrote int64
+		wrote, err = io.CopyN(w, f, writeByteCount)
+		if wrote != writeByteCount {
+			panic(fmt.Sprintf("short write: %v vs %v expected", wrote, writeByteCount))
+		}
+		panicOn(err)
 	}
-	panicOn(err)
 }
