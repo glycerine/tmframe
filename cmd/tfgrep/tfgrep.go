@@ -7,10 +7,11 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 )
 
 func showUse() {
-	fmt.Fprintf(os.Stderr, "%s greps for fields in TMFRAME payloads. Usage: %s fieldame\n", os.Args[0], os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s greps for escaped-json fields in TMFRAME payloads. Usage: tfcat | %s fieldname\n", os.Args[0], os.Args[0])
 }
 
 func usage(err error) {
@@ -23,8 +24,8 @@ var GlobalPrettyPrint bool
 func main() {
 	leftover := os.Args[1:]
 	//p("leftover = %v", leftover)
-	if len(leftover) == 0 {
-		fmt.Fprintf(os.Stderr, "no fieldname to grep for given\n")
+	if len(leftover) == 0 || (len(leftover) == 1 && strings.HasPrefix(leftover[0], "-h")) {
+		fmt.Fprintf(os.Stderr, "no fieldname given: specify a field to search for.\n")
 		showUse()
 		os.Exit(1)
 	}
