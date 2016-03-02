@@ -169,6 +169,8 @@ func SendRawBytes(inputPath string, messageCount int, w io.Writer, skipCount int
 	}
 
 	if isTail {
+		_, err = f.Seek(byteCount, 0)
+		panicOn(err)
 		_, err = io.Copy(w, f)
 	} else {
 
