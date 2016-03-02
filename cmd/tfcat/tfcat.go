@@ -52,13 +52,13 @@ func main() {
 		return
 	}
 
-	if cfg.RawCount > 0 {
+	if cfg.RawCount > 0 || cfg.RawSkip > 0 {
 		if len(leftover) != 1 {
 			fmt.Fprintf(os.Stderr, "can only copy raw messages from one file\n")
 			showUse(myflags)
 			os.Exit(1)
 		}
-		SendRawBytes(leftover[0], cfg.RawCount, os.Stdout)
+		SendRawBytes(leftover[0], cfg.RawCount, os.Stdout, cfg.RawSkip)
 		return
 	}
 
@@ -138,7 +138,13 @@ nextFrame:
 
 // copy the raw TMFRAME bytes of messageCount messages read from
 // inputPath to w
-func SendRawBytes(inputPath string, messageCount int, w io.Writer) {
+func SendRawBytes(inputPath string, messageCount int, w io.Writer, skipCount int) {
+
+	var isTail bool
+	if skipCount > 0 {
+		isTail = true
+		messageCount = skipCount
+	}
 
 	if !FileExists(inputPath) {
 		fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputPath)
@@ -162,13 +168,18 @@ func SendRawBytes(inputPath string, messageCount int, w io.Writer) {
 		byteCount += nbytes
 	}
 
-	// seek back to beginning to copy just those bytes
-	_, err = f.Seek(0, 0)
-	panicOn(err)
-	wrote, err := io.CopyN(w, f, byteCount)
-	if wrote != byteCount {
-		panic(fmt.Sprintf("short write: %v vs %v expected", wrote, byteCount))
+	if isTail {
+		_, err = io.Copy(w, f)
+	} else {
+
+		// seek back to beginning to copy just those bytes
+		_, err = f.Seek(0, 0)
+		panicOn(err)
+		var wrote int64
+		wrote, err = io.CopyN(w, f, byteCount)
+		if wrote != byteCount {
+			panic(fmt.Sprintf("short write: %v vs %v expected", wrote, byteCount))
+		}
 	}
 	panicOn(err)
-
 }
