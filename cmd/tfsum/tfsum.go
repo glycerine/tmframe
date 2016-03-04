@@ -16,7 +16,9 @@ func showUse(myflags *flag.FlagSet) {
 }
 
 func usage(err error, myflags *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, "%s\n", err)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+	}
 	showUse(myflags)
 	os.Exit(1)
 }
@@ -24,18 +26,18 @@ func usage(err error, myflags *flag.FlagSet) {
 var GlobalPrettyPrint bool
 
 func main() {
-	myflags := flag.NewFlagSet("tfcat", flag.ExitOnError)
+	myflags := flag.NewFlagSet("tfsum", flag.ExitOnError)
 	cfg := &tf.TfsumConfig{}
 	cfg.DefineFlags(myflags)
 
 	err := myflags.Parse(os.Args[1:])
 	err = cfg.ValidateConfig()
-	if err != nil {
+	if err != nil || cfg.Help {
 		usage(err, myflags)
 	}
 
 	leftover := myflags.Args()
-	p("leftover = %v", leftover)
+	//p("leftover = %v", leftover)
 	if len(leftover) != 0 {
 		fmt.Fprintf(os.Stderr, "tfsum reads stdin and writes stdout, no args allowed.\n")
 		showUse(myflags)

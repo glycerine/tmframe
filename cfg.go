@@ -95,10 +95,12 @@ func (c *TfdedupConfig) ValidateConfig() error {
 // tfsum
 
 type TfsumConfig struct {
+	Help bool
 }
 
 // call DefineFlags before myflags.Parse()
 func (c *TfsumConfig) DefineFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&c.Help, "h", false, "show this help")
 }
 
 func (c *TfsumConfig) ValidateConfig() error {
