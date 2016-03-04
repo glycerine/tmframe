@@ -90,3 +90,17 @@ func (c *TfdedupConfig) ValidateConfig() error {
 	}
 	return nil
 }
+
+////////////////
+// tfsum
+
+type TfsumConfig struct {
+}
+
+// call DefineFlags before myflags.Parse()
+func (c *TfsumConfig) DefineFlags(fs *flag.FlagSet) {
+}
+
+func (c *TfsumConfig) ValidateConfig() error {
+	return nil
+}

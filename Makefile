@@ -6,3 +6,4 @@ install:
 	GO15VENDOREXPERIMENT=1 go install ./cmd/tfindex
 	GO15VENDOREXPERIMENT=1 go install ./cmd/tfsort
 	GO15VENDOREXPERIMENT=1 go install ./cmd/tfgrep
+	GO15VENDOREXPERIMENT=1 go install ./cmd/tfsum
