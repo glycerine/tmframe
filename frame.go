@@ -8,7 +8,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/codahale/blake2"
+
+	//needs CGO: "github.com/codahale/blake2"
+	// pure Go:
+	"github.com/glycerine/blake2b" // vendor https://github.com/dchest/blake2b
+
 	"github.com/tinylib/msgp/msgp"
 	"math"
 	"time"
@@ -506,7 +510,8 @@ func FramesEqual(a, b *Frame) bool {
 // reference: https://tools.ietf.org/html/rfc7693
 //
 func (f *Frame) Blake2b() []byte {
-	h := blake2.New(nil)
+	h, err := blake2b.New(nil)
+	panicOn(err)
 
 	n := f.NumBytes()
 
