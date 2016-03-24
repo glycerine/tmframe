@@ -117,13 +117,14 @@ func GenerateSeriesWithRepeats(reps []int) *Series {
 	return NewSeriesFromFrames(frames)
 }
 
-// each of the nFrame frames is a minute apart, starting at tm
-func MakeSequentialTestFrames(nFrame int, tm time.Time) []*Frame {
+// each of the nFrame frames is 'spacing' apart, starting at tm
+func MakeSequentialTestFrames(nFrame int, tm time.Time,
+	spacing time.Duration) []*Frame {
 	frames, _, _ := GenTestFrames(nFrame, nil)
 
 	//p("tm = %v", tm)
 	for i := range frames {
-		t := tm.Add(time.Duration(i) * time.Minute)
+		t := tm.Add(time.Duration(i) * spacing)
 		frames[i].SetTm(TimeToPrimTm(t))
 		//p("frame[%v] = %s", i, frames[i])
 	}
