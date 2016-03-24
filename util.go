@@ -117,16 +117,29 @@ func GenerateSeriesWithRepeats(reps []int) *Series {
 	return NewSeriesFromFrames(frames)
 }
 
-// each of the nFrame frames is 'spacing' apart, starting at tm
-func MakeSequentialTestFrames(nFrame int, tm time.Time,
-	spacing time.Duration) []*Frame {
-	frames, _, _ := GenTestFrames(nFrame, nil)
+// MakeFloat64Frames creates a slice of *Frames,
+// each 'spacing' apart in time, starting at tm.
+// The deltas argument determines the length and the
+// content of the slice. Each element is
+// an EvOneFloat64 valued Frame, use Frame.GetV0()
+// to observe the value. deltas of 0 are skipped,
+// but the spacing continues, allowing irregularly
+// spaced sequences to be specified.
+func MakeFloat64Frames(tm time.Time,
+	spacing time.Duration, deltas []float64) []*Frame {
 
-	//p("tm = %v", tm)
-	for i := range frames {
-		t := tm.Add(time.Duration(i) * spacing)
-		frames[i].SetTm(TimeToPrimTm(t))
-		//p("frame[%v] = %s", i, frames[i])
+	frames := make([]*Frame, 0)
+	t0 := tm.UTC()
+
+	var f0 *Frame
+	var err error
+	for i, val := range deltas {
+		if val != 0 {
+			t := t0.Add(spacing * time.Duration(i))
+			f0, err = NewFrame(t, EvOneFloat64, val, 0, nil)
+			panicOn(err)
+			frames = append(frames, f0)
+		}
 	}
 
 	return frames
