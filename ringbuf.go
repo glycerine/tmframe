@@ -82,7 +82,7 @@ func (b *FrameRingBuf) readAndMaybeAdvance(p []*Frame, doAdvance bool) (n int, e
 //
 // WriteFrames writes len(p) *Frame values from p to
 // the underlying ring.
-// It returns the number of bytes written from p (0 <= n <= len(p))
+// It returns the number of Frames written from p (0 <= n <= len(p))
 // and any error encountered that caused the write to stop early.
 // Write must return a non-nil error if it returns n < len(p).
 //
