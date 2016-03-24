@@ -41,13 +41,13 @@ func (b *FrameRingBuf) TwoContig(makeCopy bool) (first []*Frame, second []*Frame
 	return b.A[b.Beg:(b.Beg + b.Readable)], b.A[0:(extent % b.N)]
 }
 
-// ReadPtrs():
+// ReadFrames():
 //
 // from bytes.Buffer.Read(): Read reads the next len(p) *Frame
 // from the buffer or until the buffer is drained. The return
 // value n is the number of bytes read. If the buffer has no data
 // to return, err is io.EOF (unless len(p) is zero); otherwise it is nil.
-func (b *FrameRingBuf) ReadPtrs(p []*Frame) (n int, err error) {
+func (b *FrameRingBuf) ReadFrames(p []*Frame) (n int, err error) {
 	return b.readAndMaybeAdvance(p, true)
 }
 
