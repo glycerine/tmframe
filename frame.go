@@ -88,6 +88,14 @@ func (f *Frame) Tm() int64 {
 	return f.Prim &^ 7
 }
 
+// TmTime extracts and returns the Prim timestamp from
+// the frame (this is a UnixNano nanosecond timestamp,
+// with the low 3 bits zeroed), then converts it to
+// a UTC timezone time.Time
+func (f *Frame) TmTime() time.Time {
+	return time.Unix(0, f.Prim&^7).UTC()
+}
+
 // SetTm set the Prim timestamp from t. It zeros the first 3 bits of t before
 // storing it, and preserves the PTI already in the primary word.
 func (f *Frame) SetTm(t int64) {
