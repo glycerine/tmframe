@@ -77,8 +77,8 @@ c) primary word + UDE word + variable byte-length message:
 +-------------------------------------------------------
 ~~~
 
-There are also two special payload types that are not UDE based.
-They handle the common case of attaching one or two
+There are also three special payload types that are not UDE based.
+They handle the common need to attach one or two
 64-bit values to a timestamp.
 
 d) primary word + one int64
