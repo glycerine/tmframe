@@ -182,6 +182,24 @@ func (f *FrameRingBuf) Avail() int {
 	return f.Readable
 }
 
+// Kth presents the contents of the
+// ring as a strictly linear sequence,
+// so the user doesn't need to think
+// about modular arithmetic. Here k indexes from
+// [0, f.Readable-1], assuming f.Avail()
+// is greater than 0. Kth() returns the
+// k-th frame starting from f.Beg, where
+// f.Beg itself is at k = 0. If k is
+// out of bounds, or the ring is empty,
+// nil is returned.
+func (f *FrameRingBuf) Kth(k int) *Frame {
+	if f.Readable == 0 || k < 0 || k >= f.Readable {
+		return nil
+	}
+	pos := (f.Beg + k) % f.N
+	return f.A[pos]
+}
+
 // First returns the earliest index, or -1 if
 // the ring is empty
 func (f *FrameRingBuf) First() int {
