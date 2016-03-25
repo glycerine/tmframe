@@ -311,3 +311,10 @@ func (f *FrameRingBuf) Last() int {
 
 	return last % f.N
 }
+
+// WriteCapacity returns the number of spaces
+// left to write in the ring before it is full.
+// When the ring is full, 0 is returned.
+func (b *FrameRingBuf) WriteCapacity() int {
+	return b.N - b.Readable
+}
