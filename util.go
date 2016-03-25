@@ -117,16 +117,21 @@ func GenerateSeriesWithRepeats(reps []int) *Series {
 	return NewSeriesFromFrames(frames)
 }
 
-// MakeFloat64Frames creates a slice of *Frames,
-// each 'spacing' apart in time, starting at tm.
+// MakeTwo64Frames creates a slice of *Frames,
+// starting at tm, and occuring thereafter as
+// determined by the offset in the sec (seconds)
+// slice.
+//
 // The deltas argument determines the length and the
 // content of the slice. Each element is
 // an EvOneFloat64 valued Frame, use Frame.GetV0()
-// to observe the value. deltas of 0 are skipped,
-// but the spacing continues, allowing irregularly
-// spaced sequences to be specified.
-func MakeFloat64Frames(tm time.Time,
-	spacing time.Duration, deltas []float64) []*Frame {
+// to observe the value. deltas of 0 are skipped.
+// typ gives the int64 V1 value for each frame,
+// accessed with Frame.GetV1().
+func MakeTwo64Frames(tm time.Time,
+	deltas []float64,
+	typ []int64,
+	addSec []int64) []*Frame {
 
 	frames := make([]*Frame, 0)
 	t0 := tm.UTC()
@@ -135,8 +140,8 @@ func MakeFloat64Frames(tm time.Time,
 	var err error
 	for i, val := range deltas {
 		if val != 0 {
-			t := t0.Add(spacing * time.Duration(i))
-			f0, err = NewFrame(t, EvOneFloat64, val, 0, nil)
+			t := t0.Add(time.Second * time.Duration(addSec[i]))
+			f0, err = NewFrame(t, EvTwo64, val, typ[i], nil)
 			panicOn(err)
 			frames = append(frames, f0)
 		}
