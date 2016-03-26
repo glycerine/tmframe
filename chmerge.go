@@ -61,7 +61,7 @@ func (fw *FrameChWriter) Merge(datestr string, strms ...*BufferedFrameReader) er
 		if err != nil {
 			if err == io.EOF {
 				// peeks[i].frame will be nil.
-				//p("err = %v, omitting peeks[i=%v] from newlist", err, i)
+				p("err = %v, peeks[i=%v]=%#v", err, i, peeks[i].frame)
 			} else {
 				return err
 			}
@@ -74,14 +74,21 @@ func (fw *FrameChWriter) Merge(datestr string, strms ...*BufferedFrameReader) er
 	for len(peeks) > 0 {
 		if len(peeks) == 1 {
 			// just copy over the rest of this stream and we're done
-			//p("down to just one (%v), copying it directly over", peeks[0].index)
+			err = nil
+			//q("down to just one (%v), copying en-mass", peeks[0].index)
 
+			//q("sending %v", peeks[0].frame.String())
 			fw.SendOnCh(peeks[0].frame, peeks[0].name, datestr)
 			var fr *Frame
+			//q("top of bulk loop , err = %v", err)
 			for err == nil {
 				fr, err = peeks[0].bfr.ReadOne()
-				if err != nil {
+				//q("ReadOne() gave err = %v, fr = %v", err, fr.String())
+				if err == nil {
+					//q("bulk, sending %v", fr.String())
 					fw.SendOnCh(fr, peeks[0].name, datestr)
+				} else {
+					//q("bulk, err I see: %v", err)
 				}
 			}
 			if err == io.EOF {
@@ -96,7 +103,7 @@ func (fw *FrameChWriter) Merge(datestr string, strms ...*BufferedFrameReader) er
 		peeks[0].frame, err = peeks[0].bfr.Peek()
 		if err != nil {
 			if err == io.EOF {
-				//p("saw err '%v',  finished with stream %v", err, peeks[0].index)
+				//q("saw err '%v',  finished with stream %v", err, peeks[0].index)
 				peeks = peeks[1:]
 			} else {
 				return err

@@ -15,7 +15,7 @@ func Test050MergeSortToChannel(t *testing.T) {
 		dir := "testdata/" + datestr
 
 		// setup the test streams, with duplicated Frames
-		nFrame := 100
+		nFrame := 10
 
 		frames, _, _ := GenTestTwo64Frames(nFrame, nil)
 
@@ -37,7 +37,7 @@ func Test050MergeSortToChannel(t *testing.T) {
 		for i := 0; i < nFrame; i++ {
 			k := int64(cryptoRandNonNegInt() % nLab)
 			frames[i].SetV1(k)
-			p("frames[i=%v] = '%v'", i, frames[i].String())
+			//p("frames[i=%v] = '%v'", i, frames[i].String())
 			wri[k].Append(frames[i])
 			expected = append(expected, k)
 		}
@@ -62,16 +62,17 @@ func Test050MergeSortToChannel(t *testing.T) {
 		go func() {
 			err = SendDirOnChannel(ch, inputFiles, dir, datestr)
 			panicOn(err)
+			//p("done with SendDirOnChannel")
 		}()
 
 		var fr Frame
-		for i, expV1 := range expected {
+		for i := range expected {
 			obs := <-ch
 			_, err := fr.Unmarshal(obs.Data, false)
-			p("i: %v, exp: %v, fr observed: %v", i, expected[i], fr.String())
+			//p("i: %v, exp: %v, fr observed: %v", i, expected[i], fr.String())
 			panicOn(err)
 			obsV1 := fr.GetV1()
-			cv.So(obsV1, cv.ShouldEqual, expV1)
+			cv.So(obsV1, cv.ShouldEqual, expected[i])
 		}
 	})
 }
