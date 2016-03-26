@@ -75,7 +75,7 @@ func main() {
 
 	strms := make([]*tf.BufferedFrameReader, len(wrote))
 	for i := range wrote {
-		strms[i] = tf.NewBufferedFrameReader(wrote[i], MB)
+		strms[i] = tf.NewBufferedFrameReader(wrote[i], MB, "")
 	}
 
 	// okay, now create and merge streams

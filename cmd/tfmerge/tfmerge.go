@@ -42,7 +42,7 @@ func main() {
 				inputFiles[i], err)
 			os.Exit(1)
 		}
-		strms[i] = tf.NewBufferedFrameReader(f, MB)
+		strms[i] = tf.NewBufferedFrameReader(f, MB, "")
 	}
 
 	// okay, now create and merge streams
