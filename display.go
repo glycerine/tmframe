@@ -65,7 +65,7 @@ func (frame *Frame) Stringify(i int64, prettyPrint bool, skipPayload bool) strin
 	}
 	if !skipPayload {
 		evtnum := frame.GetEvtnum()
-		if evtnum == EvJson {
+		if evtnum == EvJson || (evtnum >= 2000 && evtnum <= 9999) {
 			pp := prettyPrintJson(prettyPrint, frame.Data)
 			s += fmt.Sprintf("  %s", string(pp))
 		}

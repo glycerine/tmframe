@@ -471,7 +471,7 @@ func (e Evtnum) String() string {
 	case EvMsgpKafka:
 		return "EvMsgpKafka"
 	}
-	return "unknown-Evtnum"
+	return fmt.Sprintf("Ev.%d", e)
 }
 
 // String converts the Frame's header information to a string. It doesn't
