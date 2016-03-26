@@ -6,6 +6,7 @@ import (
 )
 
 type frameElem struct {
+	name  string
 	frame *Frame
 	bfr   *BufferedFrameReader
 	index int
