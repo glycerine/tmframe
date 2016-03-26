@@ -97,7 +97,7 @@ func (s *BufferedFrameReader) Advance() error {
 func (b *BufferedFrameReader) WriteTo(w io.Writer) (n int64, err error) {
 	var nn int
 	if b.Next != nil {
-		by, err := b.TmpFrame.Marshal(b.Reader.by)
+		by, err := b.TmpFrame.Marshal(b.Reader.By)
 		nn, err = w.Write(by)
 		if err != nil {
 			return int64(nn), err
@@ -105,7 +105,7 @@ func (b *BufferedFrameReader) WriteTo(w io.Writer) (n int64, err error) {
 		b.Next = nil
 	}
 	n += int64(nn)
-	m, err := b.Reader.r.WriteTo(w)
+	m, err := b.Reader.R.WriteTo(w)
 	n += m
 	return n, err
 }
@@ -124,9 +124,9 @@ func (b *BufferedFrameReader) WriteTo(w io.Writer) (n int64, err error) {
 // the size of the next frame -- see PeekNextFrame()
 // and NextFrame().
 type FrameReader struct {
-	r             *bufio.Reader
-	maxFrameBytes int64
-	by            []byte
+	R             *bufio.Reader
+	MaxFrameBytes int64
+	By            []byte
 }
 
 // NewFrameReader makes a new FrameReader. It imposes a
@@ -134,9 +134,9 @@ type FrameReader struct {
 // its internal read buffer.
 func NewFrameReader(r io.Reader, maxFrameBytes int64) *FrameReader {
 	return &FrameReader{
-		r:             bufio.NewReaderSize(r, 16),
-		maxFrameBytes: maxFrameBytes,
-		by:            make([]byte, maxFrameBytes),
+		R:             bufio.NewReaderSize(r, 16),
+		MaxFrameBytes: maxFrameBytes,
+		By:            make([]byte, maxFrameBytes),
 	}
 }
 
@@ -145,7 +145,7 @@ func NewFrameReader(r io.Reader, maxFrameBytes int64) *FrameReader {
 // stream directly. WriteTo writes data to w until
 // there is no more data to write or an error occurs.
 func (b *FrameReader) WriteTo(w io.Writer) (n int64, err error) {
-	return b.r.WriteTo(w)
+	return b.R.WriteTo(w)
 }
 
 // PeekNextFrameBytes returns the size of the next frame in bytes.
@@ -161,7 +161,7 @@ func (fr *FrameReader) PeekNextFrameBytes() (nBytes int64, err error) {
 	var nAvail int64
 
 	// peek at primary word and UDE
-	by, err := fr.r.Peek(16)
+	by, err := fr.R.Peek(16)
 	if err != nil {
 		//P("err on Peek(16): '%s'", err)
 		if len(by) < 8 {
@@ -226,7 +226,7 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 	if err != nil {
 		return nil, 0, err
 	}
-	if need > fr.maxFrameBytes {
+	if need > fr.MaxFrameBytes {
 		return nil, 0, FrameTooLargeErr
 	}
 	if need == 0 {
@@ -237,7 +237,7 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 	var got int64
 	var m int
 	for got != need {
-		m, err = fr.r.Read(fr.by[got:need])
+		m, err = fr.R.Read(fr.By[got:need])
 		got += int64(m)
 		if got == need {
 			err = nil
@@ -251,13 +251,13 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 	yesCopyTheData := true
 	if fillme == nil {
 		var f Frame
-		_, err = f.Unmarshal(fr.by[:need], yesCopyTheData)
+		_, err = f.Unmarshal(fr.By[:need], yesCopyTheData)
 		if err != nil {
 			return nil, 0, err
 		}
 		return &f, need, nil
 	}
-	_, err = fillme.Unmarshal(fr.by[:need], yesCopyTheData)
+	_, err = fillme.Unmarshal(fr.By[:need], yesCopyTheData)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -276,7 +276,7 @@ func (fr *FrameReader) NextFrameBytes(fillme []byte) (nextbytes []byte, err erro
 	if err != nil {
 		return nil, err
 	}
-	if need > fr.maxFrameBytes {
+	if need > fr.MaxFrameBytes {
 		return nil, FrameTooLargeErr
 	}
 	if need == 0 {
@@ -287,7 +287,7 @@ func (fr *FrameReader) NextFrameBytes(fillme []byte) (nextbytes []byte, err erro
 	var got int64
 	var m int
 	for got != need {
-		m, err = fr.r.Read(fr.by[got:need])
+		m, err = fr.R.Read(fr.By[got:need])
 		got += int64(m)
 		if got == need {
 			err = nil
@@ -301,6 +301,6 @@ func (fr *FrameReader) NextFrameBytes(fillme []byte) (nextbytes []byte, err erro
 	if len(fillme) == 0 {
 		fillme = make([]byte, need)
 	}
-	copy(fillme, fr.by[:need])
+	copy(fillme, fr.By[:need])
 	return fillme, nil
 }
