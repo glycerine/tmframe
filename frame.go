@@ -494,10 +494,6 @@ func (f Frame) String() string {
 	case PtiTwo64:
 		s += fmt.Sprintf(" V0:%v V1:%v", f.V0, f.Ude)
 	}
-	// events between 2000 and 9999 are assummed to be json, display
-	if evtnum >= 2000 && evtnum <= 9999 {
-		s += string(f.Data)
-	}
 
 	// don't print the data; that is usually application specific.
 	return s
