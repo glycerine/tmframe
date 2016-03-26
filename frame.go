@@ -152,11 +152,21 @@ func (f *Frame) GetV0() float64 {
 	return MyNaN
 }
 
+// GetV1 retrieves the V1 value if the frame
+// is of type PtiTwo64. Otherwise it returns 0.
 func (f *Frame) GetV1() int64 {
 	if f.GetPTI() == PtiTwo64 {
 		return f.Ude
 	}
 	return 0
+}
+
+// SetV1 sets the Frames V1 value if the frame is
+// of type PtiTwo64. Otherwise it is a no-op.
+func (f *Frame) SetV1(v1 int64) {
+	if f.GetPTI() == PtiTwo64 {
+		f.Ude = v1
+	}
 }
 
 // MyNaN provides the IEEE-754 floating point NaN value
