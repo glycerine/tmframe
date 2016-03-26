@@ -28,7 +28,7 @@ func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPay
 	}
 	if !skipPayload {
 		evtnum := frame.GetEvtnum()
-		if evtnum == EvJson {
+		if evtnum == EvJson || (evtnum >= 2000 && evtnum <= 9999) {
 			pp := prettyPrintJson(prettyPrint, frame.Data)
 			fmt.Fprintf(w, "  %s", string(pp))
 		}
