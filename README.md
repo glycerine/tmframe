@@ -309,6 +309,7 @@ next TMFRAME message will commence with its primary word.
 
 This concludes the specification of the TMFRAME format.
 
+
 # conclusion
 
 TMFRAME is a very simple yet flexible format for time series data. It allows
@@ -319,6 +320,11 @@ required.
 ### implementation
 
 There is a full reference Go implementation in this repo. [Docs here](https://godoc.org/github.com/glycerine/tmframe).
+
+### NB EVTNUM convention for display only in the Go implementation
+
+EVTNUM between 2000 and 9999 are assummed to be json, and will be displayed by tfcat as such.
+
 
 ### notes
 
