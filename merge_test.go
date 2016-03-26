@@ -37,7 +37,7 @@ func Test020MergeSortStreams(t *testing.T) {
 		for i := 0; i < nPile; i++ {
 			fds[i].Sync()
 			fds[i].Seek(0, 0)
-			strms[i] = NewBufferedFrameReader(fds[i], 64*1024)
+			strms[i] = NewBufferedFrameReader(fds[i], 64*1024, "")
 		}
 
 		obsPath := "test.merge.observed"

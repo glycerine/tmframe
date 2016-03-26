@@ -18,17 +18,19 @@ import (
 // BufferedFrameReader supports PeekFrame(), Advance(),
 // and ReadOne() that help in merging (merge sorting) two streams.
 type BufferedFrameReader struct {
-	reader   *FrameReader
-	next     *Frame
-	tmpFrame Frame
+	Name     string
+	Reader   *FrameReader
+	Next     *Frame
+	TmpFrame Frame
 }
 
 // NewBufferedFrameReader makes a new BufferedFrameReader. It imposes a
 // message size limit of maxFrameBytes in order to size
 // its internal FrameReader's buffer.
-func NewBufferedFrameReader(r io.Reader, maxFrameBytes int64) *BufferedFrameReader {
+func NewBufferedFrameReader(r io.Reader, maxFrameBytes int64, name string) *BufferedFrameReader {
 	s := &BufferedFrameReader{
-		reader: NewFrameReader(r, maxFrameBytes),
+		Name:   name,
+		Reader: NewFrameReader(r, maxFrameBytes),
 	}
 	return s
 }
@@ -41,9 +43,9 @@ func NewBufferedFrameReader(r io.Reader, maxFrameBytes int64) *BufferedFrameRead
 // returned *Frame (if not nil) before considering
 // the returned error.
 func (s *BufferedFrameReader) ReadOne() (*Frame, error) {
-	if s.next != nil {
-		r := s.next
-		s.next = nil
+	if s.Next != nil {
+		r := s.Next
+		s.Next = nil
 		return r, nil
 	}
 	fr, err := s.Peek()
@@ -58,16 +60,16 @@ func (s *BufferedFrameReader) ReadOne() (*Frame, error) {
 // past it. Repeated calls to Peek without any intervening
 // ReadAndAdvance or Advance calls will return the same Frame.
 func (s *BufferedFrameReader) Peek() (*Frame, error) {
-	if s.next != nil {
-		return s.next, nil
+	if s.Next != nil {
+		return s.Next, nil
 	}
 
-	_, _, err := s.reader.NextFrame(&s.tmpFrame)
+	_, _, err := s.Reader.NextFrame(&s.TmpFrame)
 	if err != nil {
 		return nil, err
 	}
-	s.next = &s.tmpFrame
-	return s.next, nil
+	s.Next = &s.TmpFrame
+	return s.Next, nil
 }
 
 // Advance skips forward a frame in the stream.
@@ -75,15 +77,15 @@ func (s *BufferedFrameReader) Peek() (*Frame, error) {
 // the next framing being the one that would have
 // been returned if Peek had been called instead.
 func (s *BufferedFrameReader) Advance() error {
-	if s.next != nil {
-		s.next = nil
+	if s.Next != nil {
+		s.Next = nil
 		return nil
 	}
-	_, _, err := s.reader.NextFrame(&s.tmpFrame)
+	_, _, err := s.Reader.NextFrame(&s.TmpFrame)
 	if err != nil {
 		return err
 	}
-	s.next = &s.tmpFrame
+	s.Next = &s.TmpFrame
 	return nil
 }
 
@@ -94,16 +96,16 @@ func (s *BufferedFrameReader) Advance() error {
 // directly.
 func (b *BufferedFrameReader) WriteTo(w io.Writer) (n int64, err error) {
 	var nn int
-	if b.next != nil {
-		by, err := b.tmpFrame.Marshal(b.reader.by)
+	if b.Next != nil {
+		by, err := b.TmpFrame.Marshal(b.Reader.by)
 		nn, err = w.Write(by)
 		if err != nil {
 			return int64(nn), err
 		}
-		b.next = nil
+		b.Next = nil
 	}
 	n += int64(nn)
-	m, err := b.reader.r.WriteTo(w)
+	m, err := b.Reader.r.WriteTo(w)
 	n += m
 	return n, err
 }
