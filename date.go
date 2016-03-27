@@ -156,3 +156,13 @@ func PrevDate(d *Date) *Date {
 	next := tm.AddDate(0, 0, -1)
 	return UTCDateFromTime(next)
 }
+
+// TimeToDate returns the UTC Date associated with tm.
+func TimeToDate(tm time.Time) Date {
+	utc := tm.UTC()
+	return Date{
+		Year:  utc.Year(),
+		Month: int(utc.Month()),
+		Day:   utc.Day(),
+	}
+}
