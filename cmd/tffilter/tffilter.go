@@ -16,7 +16,9 @@ func showUse(myflags *flag.FlagSet) {
 }
 
 func usage(err error, myflags *flag.FlagSet) {
-	fmt.Fprintf(os.Stderr, "%s\n", err)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+	}
 	showUse(myflags)
 	os.Exit(1)
 }
