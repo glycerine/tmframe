@@ -37,7 +37,7 @@ func Test010InForceAtReturnsFrameBefore(t *testing.T) {
 		var frame Frame
 		i := 0
 		for ; err == nil; i++ {
-			_, _, err = fr.NextFrame(&frame)
+			_, _, err, _ = fr.NextFrame(&frame)
 			if err != nil {
 				if err == io.EOF {
 					break

@@ -132,12 +132,14 @@ func (c *TfgroupConfig) ValidateConfig() error {
 type TffilterConfig struct {
 	Help           bool
 	ExcludeMatches bool
+	RegexFile      string
 }
 
 // call DefineFlags before myflags.Parse()
 func (c *TffilterConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Help, "h", false, "show this help")
 	fs.BoolVar(&c.ExcludeMatches, "x", false, "exclude regex matches rather than, by default, outputing only matches")
+	fs.StringVar(&c.RegexFile, "regexfile", "", "read a newline separated list of regex from this file")
 }
 
 func (c *TffilterConfig) ValidateConfig() error {

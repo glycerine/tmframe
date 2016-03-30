@@ -30,20 +30,37 @@ func main() {
 
 	err := myflags.Parse(os.Args[1:])
 	err = cfg.ValidateConfig()
-	if err != nil {
+	if err != nil || cfg.Help {
 		usage(err, myflags)
 	}
 
 	leftover := myflags.Args()
-	//p("leftover = %v", leftover)
-	if len(leftover) == 0 || (len(leftover) == 1 && strings.HasPrefix(leftover[0], "-h")) {
-		fmt.Fprintf(os.Stderr, "no regex given: specify at least one regex to filter with.\n")
-		showUse(myflags)
-		os.Exit(1)
+
+	regs := leftover
+	//p("regs = %v", regs)
+	if cfg.RegexFile != "" {
+		regs, err = tf.ReadNewlineDelimFile(cfg.RegexFile)
+		if err != nil {
+			usage(err, myflags)
+		}
+		if len(regs) == 0 {
+			fmt.Fprintf(os.Stderr, "no regex given from file '%s': specify at least one regex to filter with.\n", cfg.RegexFile)
+			showUse(myflags)
+			os.Exit(1)
+		}
+	} else {
+		if len(regs) == 0 || (len(regs) == 1 && strings.HasPrefix(regs[0], "-h")) {
+			fmt.Fprintf(os.Stderr, "no regex given: specify at least one regex to filter with.\n")
+			showUse(myflags)
+			os.Exit(1)
+		}
 	}
+
+	// INVAR: regs specified, and len(regs) > 0
+
 	arrRegex := make([]*regexp.Regexp, 0)
-	for i := range leftover {
-		field := leftover[i]
+	for i := range regs {
+		field := regs[i]
 		//fmt.Fprintf(os.Stderr, "compiling regex %d: '%s'\n", i, field)
 		re := regexp.MustCompile(field)
 		arrRegex = append(arrRegex, re)
@@ -55,7 +72,7 @@ func main() {
 
 	var frame tf.Frame
 	var raw []byte
-	n := len(leftover)
+	n := len(regs)
 
 toploop:
 	for ; err == nil; i++ {
@@ -72,7 +89,7 @@ toploop:
 		matchN := 0
 		for _, r := range arrRegex {
 			o := r.FindString(str)
-			//fmt.Fprintf(os.Stderr, "tffilter at i=%v, matching frame '%s' against regex '%s': output is: '%s'\n", j, str, leftover[j], o)
+			//fmt.Fprintf(os.Stderr, "tffilter at i=%v, matching frame '%s' against regex '%s': output is: '%s'\n", j, str, regs[j], o)
 			if o != "" {
 				matchN++
 			}
