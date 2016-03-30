@@ -35,7 +35,7 @@ func main() {
 
 	leftover := myflags.Args()
 	//Q("leftover = %v", leftover)
-	if len(leftover) == 0 {
+	if len(leftover) == 0 && cfg.ReadStdin == false {
 		fmt.Fprintf(os.Stderr, "no input files given\n")
 		showUse(myflags)
 		os.Exit(1)
@@ -44,12 +44,26 @@ func main() {
 
 	if cfg.Follow {
 		if len(leftover) != 1 {
+			if cfg.ReadStdin {
+				fmt.Fprintf(os.Stderr, "cannot follow stdin\n")
+				showUse(myflags)
+				os.Exit(1)
+			}
 			fmt.Fprintf(os.Stderr, "can only follow a single file\n")
 			showUse(myflags)
 			os.Exit(1)
 		}
 		FollowFile(leftover[0], cfg)
 		return
+	}
+
+	if cfg.ReadStdin {
+		if len(leftover) > 0 {
+			fmt.Fprintf(os.Stderr, "if reading from stdin, cannot also read from files\n")
+			showUse(myflags)
+			os.Exit(1)
+		}
+		leftover = []string{"stdin"}
 	}
 
 	if cfg.RawCount > 0 || cfg.RawSkip > 0 {
@@ -65,14 +79,11 @@ func main() {
 	i := int64(1)
 nextfile:
 	for _, inputFile := range leftover {
-		//P("starting on inputFile '%s'", inputFile)
-		if !FileExists(inputFile) {
-			fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputFile)
-			os.Exit(1)
-		}
 
-		f, err := os.Open(inputFile)
-		panicOn(err)
+		f := prepInput(inputFile)
+		defer f.Close()
+		//P("starting on inputFile '%s'", inputFile)
+
 		fr := tf.NewFrameReader(f, 1024*1024)
 
 		var frame tf.Frame
@@ -136,18 +147,32 @@ nextFrame:
 	}
 }
 
-// copy the raw TMFRAME bytes of messageCount messages read from
-// inputPath to w
-func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameCount int) {
+func prepInput(inputPath string) *os.File {
 
-	if !FileExists(inputPath) {
+	if inputPath != "stdin" && !FileExists(inputPath) {
 		fmt.Fprintf(os.Stderr, "input file '%s' does not exist.\n", inputPath)
 		os.Exit(1)
 	}
 
-	f, err := os.Open(inputPath)
-	panicOn(err)
+	var f *os.File
+	var err error
+	if inputPath == "stdin" {
+		f = os.Stdin
+	} else {
+		f, err = os.Open(inputPath)
+		panicOn(err)
+	}
+
+	return f
+}
+
+// copy the raw TMFRAME bytes of messageCount messages read from
+// inputPath to w
+func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameCount int) {
+
+	f := prepInput(inputPath)
 	defer f.Close()
+	var err error
 
 	fr := tf.NewFrameReader(f, 1024*1024)
 	var frame tf.Frame

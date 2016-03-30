@@ -12,6 +12,7 @@ type TfcatConfig struct {
 	Follow      bool
 	RawCount    int
 	RawSkip     int
+	ReadStdin   bool
 }
 
 // call DefineFlags before myflags.Parse()
@@ -21,6 +22,7 @@ func (c *TfcatConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.PrettyPrint, "p", false, "pretty print output.")
 	fs.BoolVar(&c.SkipPayload, "s", false, "short display. skip printing any data payload.")
 	fs.BoolVar(&c.Follow, "f", false, "follow the file, only printing any new additions.")
+	fs.BoolVar(&c.ReadStdin, "stdin", false, "read input from stdin rather than a file. tfcat cannot also -f follow stdin.")
 }
 
 // call c.ValidateConfig() after myflags.Parse()
