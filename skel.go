@@ -24,7 +24,7 @@ func SkeletonDemoCopyFames(r io.Reader, w io.Writer) error {
 	var err error
 	for i := 0; err == nil; i++ {
 		var frame Frame
-		_, _, err = fr.NextFrame(&frame)
+		_, _, err, _ = fr.NextFrame(&frame)
 		if err != nil {
 			if err != io.EOF {
 				return fmt.Errorf("error from fr.NextFrame(): '%v'", err)

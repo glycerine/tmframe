@@ -78,7 +78,7 @@ nextfile:
 		var frame tf.Frame
 
 		for ; err == nil; i++ {
-			_, _, err = fr.NextFrame(&frame)
+			_, _, err, _ = fr.NextFrame(&frame)
 			if err != nil {
 				if err == io.EOF {
 					continue nextfile
@@ -118,7 +118,7 @@ func FollowFile(path string, cfg *tf.TfcatConfig) {
 	i := int64(1)
 nextFrame:
 	for {
-		_, _, err = fr.NextFrame(&frame)
+		_, _, err, _ = fr.NextFrame(&frame)
 		if err != nil {
 			if err == io.EOF {
 				select {
@@ -155,7 +155,7 @@ func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameC
 	writeByteCount := int64(0)
 
 	for i := 0; i < skipFrameCount; i++ {
-		_, nbytes, err := fr.NextFrame(&frame)
+		_, nbytes, err, _ := fr.NextFrame(&frame)
 		if err != nil {
 			panic(err)
 			//os.Exit(0)
@@ -164,7 +164,7 @@ func SendRawBytes(inputPath string, writeFrameCount int, w io.Writer, skipFrameC
 	}
 
 	for i := 0; i < writeFrameCount; i++ {
-		_, nbytes, err := fr.NextFrame(&frame)
+		_, nbytes, err, _ := fr.NextFrame(&frame)
 		if err != nil {
 			panic(err)
 			//os.Exit(0)

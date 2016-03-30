@@ -64,7 +64,7 @@ func (s *BufferedFrameReader) Peek() (*Frame, error) {
 		return s.Next, nil
 	}
 
-	_, _, err := s.Reader.NextFrame(&s.TmpFrame)
+	_, _, err, _ := s.Reader.NextFrame(&s.TmpFrame)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (s *BufferedFrameReader) Advance() error {
 		s.Next = nil
 		return nil
 	}
-	_, _, err := s.Reader.NextFrame(&s.TmpFrame)
+	_, _, err, _ := s.Reader.NextFrame(&s.TmpFrame)
 	if err != nil {
 		return err
 	}
@@ -221,16 +221,24 @@ var FrameTooLargeErr = fmt.Errorf("frame was larger than FrameReader's maximum")
 // nil, NextFrame allocates a new Frame. NextFrame returns a pointer to the filled
 // frame, along with the number of bytes on the wire used by the frame.
 // If err is not nil, we returns a nil *Frame and 0 for nbytes.
-func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err error) {
+//
+// Warning about the returned 'raw' bytes:
+//
+// If err is nil, the 4th return argument, raw, holds the raw bytes of the
+// frame. Copy these bytes immediately if you need them, as the
+// raw bytes will be overwritten on the next call to this library.
+// If err is not nil, raw will be nil.
+//
+func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err error, raw []byte) {
 	need, err := fr.PeekNextFrameBytes()
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, err, nil
 	}
 	if need > fr.MaxFrameBytes {
-		return nil, 0, FrameTooLargeErr
+		return nil, 0, FrameTooLargeErr, nil
 	}
 	if need == 0 {
-		return nil, 0, io.EOF
+		return nil, 0, io.EOF, nil
 	}
 
 	// read 'need' number of bytes, or get an IO error
@@ -244,7 +252,7 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 			break
 		}
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, err, nil
 		}
 	}
 
@@ -253,15 +261,15 @@ func (fr *FrameReader) NextFrame(fillme *Frame) (frame *Frame, nbytes int64, err
 		var f Frame
 		_, err = f.Unmarshal(fr.By[:need], yesCopyTheData)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, err, nil
 		}
-		return &f, need, nil
+		return &f, need, nil, fr.By[:need]
 	}
 	_, err = fillme.Unmarshal(fr.By[:need], yesCopyTheData)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, err, nil
 	}
-	return fillme, need, nil
+	return fillme, need, nil, fr.By[:need]
 }
 
 // NextFrameBytes is like NextFrame but avoids Unmarshalling

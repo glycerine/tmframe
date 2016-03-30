@@ -66,7 +66,7 @@ nextfile:
 		var nbytes int64
 
 		for ; err == nil; i++ {
-			_, nbytes, err = fr.NextFrame(&frame)
+			_, nbytes, err, _ = fr.NextFrame(&frame)
 			if err != nil {
 				if err == io.EOF {
 					fw.Flush()

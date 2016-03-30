@@ -53,7 +53,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 	var ptr *dedup
 	for i := 0; err == nil; i++ {
 		var frame Frame
-		_, _, err = fr.NextFrame(&frame)
+		_, _, err, _ = fr.NextFrame(&frame)
 		if err != nil {
 			if err != io.EOF {
 				return fmt.Errorf("dedup error from fr.NextFrame(): '%v'", err)

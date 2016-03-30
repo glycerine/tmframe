@@ -20,7 +20,7 @@ func ReadAllFrames(inputFile string) ([]*Frame, error) {
 
 	res := []*Frame{}
 	for ; err == nil; i++ {
-		frame, _, err := fr.NextFrame(nil)
+		frame, _, err, _ := fr.NextFrame(nil)
 		if err != nil {
 			if err == io.EOF {
 				return res, nil
