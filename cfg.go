@@ -125,3 +125,21 @@ func (c *TfgroupConfig) DefineFlags(fs *flag.FlagSet) {
 func (c *TfgroupConfig) ValidateConfig() error {
 	return nil
 }
+
+////////////////
+// tffilter
+
+type TffilterConfig struct {
+	Help           bool
+	ExcludeMatches bool
+}
+
+// call DefineFlags before myflags.Parse()
+func (c *TffilterConfig) DefineFlags(fs *flag.FlagSet) {
+	fs.BoolVar(&c.Help, "h", false, "show this help")
+	fs.BoolVar(&c.ExcludeMatches, "x", false, "exclude regex matches rather than, by default, outputing only matches")
+}
+
+func (c *TffilterConfig) ValidateConfig() error {
+	return nil
+}
