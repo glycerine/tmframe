@@ -73,6 +73,7 @@ func main() {
 	var frame tf.Frame
 	var raw []byte
 	n := len(regs)
+	var allMatched, anyMatched bool
 
 toploop:
 	for ; err == nil; i++ {
@@ -87,31 +88,70 @@ toploop:
 		str := frame.Stringify(-1, false, false)
 		// match regex
 		matchN := 0
+		var o string
 		for _, r := range arrRegex {
-			o := r.FindString(str)
+			o = r.FindString(str)
 			//fmt.Fprintf(os.Stderr, "tffilter at i=%v, matching frame '%s' against regex '%s': output is: '%s'\n", j, str, regs[j], o)
 			if o != "" {
 				matchN++
+
+				switch {
+				// we have a match
+				case cfg.Any:
+					// found at least one match, we can stop under Any
+					switch {
+					case cfg.ExcludeMatches:
+						continue toploop
+					case !cfg.ExcludeMatches:
+						goto writeout
+					}
+				}
+			} else {
+				// not a match
+				switch {
+				case !cfg.Any && cfg.ExcludeMatches:
+					// we've got to match all n in order to exclude, so we know now that we will include.
+					goto writeout
+
+				case !cfg.Any && !cfg.ExcludeMatches:
+					// not a match, and all must match to survive the filter, so we can stop
+					continue toploop
+				}
 			}
 		}
+
+		allMatched = (matchN == n)
+		anyMatched = (matchN > 0)
+
 		switch {
-		case !cfg.ExcludeMatches:
-			// regex all must match for us to let the frame through the filters
-			if matchN == n {
-				_, err = os.Stdout.Write(raw)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "tffilter stopping at: '%s'", err)
-				}
+		case cfg.Any && cfg.ExcludeMatches:
+			if anyMatched {
+				continue toploop
 			}
-		case cfg.ExcludeMatches:
-			// under -x, we only *exclude* when all the filters match
-			if matchN < n {
-				_, err = os.Stdout.Write(raw)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "tffilter stopping at: '%s'", err)
-				}
+			goto writeout
+		case cfg.Any && !cfg.ExcludeMatches:
+			if anyMatched {
+				goto writeout
 			}
+			continue toploop
+		case !cfg.Any && cfg.ExcludeMatches:
+			if allMatched {
+				continue toploop
+			}
+			goto writeout
+		case !cfg.Any && !cfg.ExcludeMatches:
+			if allMatched {
+				goto writeout
+			}
+			continue toploop
 		}
-	}
+	writeout:
+		_, err = os.Stdout.Write(raw)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "tffilter stopping at: '%s'", err)
+		}
+
+	} // end for toploop
+
 	//fmt.Fprintf(os.Stderr, "field='%s': found %v matches.\n", field, matchCount)
 }
