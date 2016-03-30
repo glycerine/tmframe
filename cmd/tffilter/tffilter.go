@@ -31,7 +31,7 @@ func main() {
 	arrRegex := make([]*regexp.Regexp, 0)
 	for i := range leftover {
 		field := leftover[i]
-		fmt.Fprintf(os.Stderr, "compiling regex %d: '%s'\n", i, field)
+		//fmt.Fprintf(os.Stderr, "compiling regex %d: '%s'\n", i, field)
 		re := regexp.MustCompile(field)
 		arrRegex = append(arrRegex, re)
 	}
@@ -51,15 +51,17 @@ toploop:
 			if err == io.EOF {
 				break toploop
 			}
-			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
+			fmt.Fprintf(os.Stderr, "tffilter error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 			os.Exit(1)
 		}
-		str := frame.String()
+		str := frame.Stringify(-1, false, false)
 		// match regex
 		matchall := true
 	regexLoop:
 		for _, r := range arrRegex {
-			if r.FindString(str) == "" {
+			o := r.FindString(str)
+			//fmt.Fprintf(os.Stderr, "tffilter at i=%v, matching frame '%s' against regex '%s': output is: '%s'\n", j, str, leftover[j], o)
+			if o == "" {
 				matchall = false
 				break regexLoop
 			}
