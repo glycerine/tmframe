@@ -10,7 +10,7 @@ import (
 )
 
 func showUse() {
-	fmt.Fprintf(os.Stderr, "tffilter filters raw TMFRAME streams by one or more regexes. It outputs a reduced TMFRAME stream of frames that matched all regexes. Usage: tffilter regex1 {regex2}...\n")
+	fmt.Fprintf(os.Stderr, "tffilter filters raw TMFRAME streams on stdin by one or more regexes. It writes to stdout a reduced TMFRAME stream of frames that matched all regexes. Usage: tffilter regex1 {regex2}...\n")
 }
 
 func usage(err error) {
