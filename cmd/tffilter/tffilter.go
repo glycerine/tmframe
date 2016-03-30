@@ -22,7 +22,7 @@ var GlobalPrettyPrint bool
 
 func main() {
 	leftover := os.Args[1:]
-	p("leftover = %v", leftover)
+	//p("leftover = %v", leftover)
 	if len(leftover) == 0 || (len(leftover) == 1 && strings.HasPrefix(leftover[0], "-h")) {
 		fmt.Fprintf(os.Stderr, "no regex given: specify a regex to filter with.\n")
 		showUse()
