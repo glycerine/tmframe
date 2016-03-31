@@ -32,8 +32,12 @@ func main() {
 
 	err := myflags.Parse(os.Args[1:])
 	err = cfg.ValidateConfig()
-	if err != nil || cfg.Help {
+	if err != nil {
 		usage(err, myflags)
+	}
+	if cfg.Help {
+		fmt.Fprintf(os.Stderr, "help requested:\n")
+		usage(nil, myflags)
 	}
 
 	leftover := myflags.Args()
@@ -43,6 +47,7 @@ func main() {
 	if cfg.RegexFile != "" {
 		regs, err = tf.ReadNewlineDelimFile(cfg.RegexFile)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "error reading -regexfile '%s': '%s'\n", cfg.RegexFile, err)
 			usage(err, myflags)
 		}
 		if len(regs) == 0 {

@@ -10,7 +10,7 @@ import (
 // read in new-line delimited text from a file
 func ReadNewlineDelimFile(path string) ([]string, error) {
 	if !FileExists(path) {
-		return nil, fmt.Errorf("file '%s' does not exists", path)
+		return nil, fmt.Errorf("file '%s' does not exist", path)
 	}
 	f, err := os.Open(path)
 	if err != nil {

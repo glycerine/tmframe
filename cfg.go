@@ -141,9 +141,12 @@ func (c *TffilterConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Help, "h", false, "show this help")
 	fs.BoolVar(&c.ExcludeMatches, "x", false, "exclude regex matches rather than, by default, outputing only matches.")
 	fs.StringVar(&c.RegexFile, "regexfile", "", "read a newline separated list of regex from this file")
-	fs.BoolVar(&c.Help, "any", false, "include the frame if any of the regex matches (effectively OR-ing the regex instead of the default AND-ing)")
+	fs.BoolVar(&c.Any, "any", false, "include the frame if any of the regex matches (effectively OR-ing the regex instead of the default AND-ing)")
 }
 
 func (c *TffilterConfig) ValidateConfig() error {
+	if c.RegexFile != "" && !FileExists(c.RegexFile) {
+		return fmt.Errorf("-regexfile '%s' does not exist", c.RegexFile)
+	}
 	return nil
 }
