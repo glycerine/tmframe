@@ -100,8 +100,11 @@ toploop:
 		for _, r := range arrRegex {
 			if cfg.Sub {
 				sub = r.FindStringSubmatch(str)
+				//p("sub back from r.FindStringSubmatch(str='%s')  is '%#v' from regex '%s'", str, sub, regs[j])
 				if sub == nil {
 					o = ""
+				} else {
+					o = "hit"
 				}
 			} else {
 				o = r.FindString(str)
@@ -163,7 +166,9 @@ toploop:
 	writeout:
 		if cfg.Sub {
 			// sub-expression matching and reporting only the sub matches
+			//p("sub = %#v", sub)
 			sub = sub[1:]
+			//p("sub[1:] = %#v", sub)
 			nsub := len(sub)
 			if nsub > 0 {
 				for k := range sub {
