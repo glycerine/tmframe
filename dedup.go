@@ -87,7 +87,7 @@ func Dedup(r io.Reader, w io.Writer, windowSize int, dupsW io.Writer, detectOnly
 				// not be recognized.
 
 				if detectOnly {
-					return NewDupDetectedErr(frame.Stringify(int64(i), false, true))
+					return NewDupDetectedErr(frame.Stringify(int64(i), false, true, false))
 				}
 				ptr = p.(*dedup)
 				ptr.count++

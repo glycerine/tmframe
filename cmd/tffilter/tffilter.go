@@ -92,7 +92,7 @@ toploop:
 			fmt.Fprintf(os.Stderr, "tffilter error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 			os.Exit(1)
 		}
-		str := frame.Stringify(-1, false, false)
+		str := frame.Stringify(-1, false, false, false)
 		// match regex
 		matchN := 0
 		var o string

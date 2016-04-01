@@ -19,7 +19,16 @@ import (
 // is json or msgpack, we will display in an easier to ready pretty-printed
 // json format. If skipPayload is true we will only print the Frame header
 // information.
-func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPayload bool) {
+//
+// If rReadable, then we print in a format that can be consumed
+// by R's read.table() call. The skipPayload, prettyPrint, and i values are ignored.
+//
+func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPayload bool, rReadable bool) {
+
+	if rReadable {
+		frame.DisplayForR(w)
+		return
+	}
 
 	if i >= 0 {
 		fmt.Fprintf(w, "%06d %s", i, frame.String())
@@ -55,8 +64,13 @@ func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPay
 
 // StringifyFrame is like DisplayFrame but it returns
 // a string.
-func (frame *Frame) Stringify(i int64, prettyPrint bool, skipPayload bool) string {
+func (frame *Frame) Stringify(i int64, prettyPrint bool, skipPayload bool, rReadable bool) string {
 	var s string
+
+	if rReadable {
+		s += frame.StringifyForR()
+		return s
+	}
 
 	if i >= 0 {
 		s += fmt.Sprintf("%06d %s", i, frame.String())
@@ -202,4 +216,51 @@ func (x JsonBytesAsStringExt) UpdateExt(dest interface{}, v interface{}) {
 		panic(fmt.Sprintf("unsupported format for JsonBytesAsStringExt conversion: expecting []byte; got %T", v))
 	}
 
+}
+
+func (f *Frame) StringifyForR() string {
+
+	tmu := f.Tm()
+	tm := time.Unix(0, tmu).UTC()
+	evtnum := f.GetEvtnum()
+
+	s := fmt.Sprintf("%v evtnum %v", tm.Format(time.RFC3339Nano), evtnum)
+
+	pti := f.GetPTI()
+
+	switch pti {
+	case PtiOneInt64:
+		s += fmt.Sprintf(" V1 %v", f.Ude)
+	case PtiOneFloat64:
+		s += fmt.Sprintf(" V0 %v", f.V0)
+	case PtiTwo64:
+		s += fmt.Sprintf(" V0 %v V1 %v", f.V0, f.Ude)
+	}
+
+	if evtnum == EvJson || (evtnum >= 2000 && evtnum <= 9999) {
+		pp := prettyPrintJson(false, f.Data)
+		s += fmt.Sprintf("  %s", string(pp))
+	}
+	if evtnum == EvMsgpKafka || evtnum == EvMsgpack {
+		// decode msgpack to json with ugorji/go/codec
+
+		var iface interface{}
+		dec := codec.NewDecoderBytes(f.Data, &msgpHelper.mh)
+		err := dec.Decode(&iface)
+		panicOn(err)
+
+		//Q("iface = '%#v'", iface)
+
+		var w bytes.Buffer
+		enc := codec.NewEncoder(&w, &msgpHelper.jh)
+		err = enc.Encode(&iface)
+		panicOn(err)
+		pp := prettyPrintJson(false, w.Bytes())
+		s += fmt.Sprintf(" '%s'", string(pp))
+	}
+	return s
+}
+
+func (frame *Frame) DisplayForR(w io.Writer) {
+	fmt.Fprintf(w, "%s\n", frame.StringifyForR())
 }
