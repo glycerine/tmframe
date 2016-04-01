@@ -96,8 +96,16 @@ toploop:
 		// match regex
 		matchN := 0
 		var o string
+		var sub []string
 		for _, r := range arrRegex {
-			o = r.FindString(str)
+			if cfg.Sub {
+				sub = r.FindStringSubmatch(str)
+				if sub == nil {
+					o = ""
+				}
+			} else {
+				o = r.FindString(str)
+			}
 			//fmt.Fprintf(os.Stderr, "tffilter at i=%v, matching frame '%s' against regex '%s': output is: '%s'\n", j, str, regs[j], o)
 			if o != "" {
 				matchN++
@@ -153,11 +161,26 @@ toploop:
 			continue toploop
 		}
 	writeout:
-		_, err = os.Stdout.Write(raw)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "tffilter stopping at: '%s'", err)
+		if cfg.Sub {
+			// sub-expression matching and reporting only the sub matches
+			sub = sub[1:]
+			nsub := len(sub)
+			if nsub > 0 {
+				for k := range sub {
+					fmt.Printf("%s", sub[k])
+					if k < nsub-1 {
+						fmt.Printf(" ", sub[k])
+					}
+				}
+				fmt.Printf("\n")
+			}
+		} else {
+			// full record matching
+			_, err = os.Stdout.Write(raw)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "tffilter stopping at: '%s'", err)
+			}
 		}
-
 	} // end for toploop
 
 	//fmt.Fprintf(os.Stderr, "field='%s': found %v matches.\n", field, matchCount)

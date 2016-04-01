@@ -136,6 +136,7 @@ type TffilterConfig struct {
 	ExcludeMatches bool
 	RegexFile      string
 	Any            bool
+	Sub            bool
 }
 
 // call DefineFlags before myflags.Parse()
@@ -144,6 +145,7 @@ func (c *TffilterConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.ExcludeMatches, "x", false, "exclude regex matches rather than, by default, outputing only matches.")
 	fs.StringVar(&c.RegexFile, "regexfile", "", "read a newline separated list of regex from this file")
 	fs.BoolVar(&c.Any, "any", false, "include the frame if any of the regex matches (effectively OR-ing the regex instead of the default AND-ing)")
+	fs.BoolVar(&c.Sub, "sub", false, "print only sub-expression matches of the regular expression")
 }
 
 func (c *TffilterConfig) ValidateConfig() error {
