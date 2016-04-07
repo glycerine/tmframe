@@ -65,7 +65,7 @@ func main() {
 			}
 		}
 		if len(s) > 0 {
-			fmt.Println(s)
+			fmt.Printf(s)
 		}
 
 		buf.Reset()
