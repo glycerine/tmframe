@@ -59,7 +59,7 @@ func main() {
 			if match != nil {
 				if len(match[0]) > 1 {
 					for j := 1; j < len(match[0]); j++ {
-						s += string(match[0][j]) + " "
+						s += string(match[0][j]) + "\n" // flatten matches, each to one line
 					}
 				}
 			}
