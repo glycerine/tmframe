@@ -303,7 +303,9 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
              will include an additional terminating zero byte
              if the string has length > 0.
 
-       15 => the payload is in ZebraPack format.
+       15 => the payload is a Kafka/msgpack message.
+
+       16 => the payload is in ZebraPack format.
              See https://github.com/glycerine/zebrapack for
              the specification and a Go implementation.
 ~~~

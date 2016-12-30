@@ -62,6 +62,7 @@ const (
 	EvUtf8      Evtnum = 13
 	EvJson      Evtnum = 14
 	EvMsgpKafka Evtnum = 15
+	EvZebraPack Evtnum = 16
 )
 
 // Frame holds a fully parsed TMFRAME message.
