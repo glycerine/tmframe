@@ -302,6 +302,10 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        14 => the payload is a JSON UTF-8 string. The UCOUNT
              will include an additional terminating zero byte
              if the string has length > 0.
+
+       15 => the payload is in ZebraPack format.
+             See https://github.com/glycerine/zebrapack for
+             the specification and a Go implementation.
 ~~~
 
 After any variable length payload that follows the UDE word, the
