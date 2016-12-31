@@ -283,7 +283,7 @@ msb    user-defined-encoding (UDE) descriptor 64-bit word     lsb
        8 => a TMFRAME-HEADER value follows, giving time-series
             metadata. To be described later.
             
-       9 => a Msgpack encoded message follows.
+       9 => a Msgpack[version 2] encoded message follows.
        
        10 => a Binc encoded message follows.
        
