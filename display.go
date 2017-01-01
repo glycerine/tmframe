@@ -62,7 +62,7 @@ func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPay
 			pp := prettyPrintJson(prettyPrint, wbuf.Bytes())
 			fmt.Fprintf(w, " %s", string(pp))
 		case EvZebraPack:
-			m2, _, err := zSchema.ZebraToMsgp2(frame.Data)
+			m2, _, err := zSchema.ZebraToMsgp2(frame.Data, true)
 			panicOn(err)
 			var json bytes.Buffer
 			_, err = msgp.CopyToJSON(&json, bytes.NewBuffer(m2))
