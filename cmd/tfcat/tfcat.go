@@ -6,6 +6,7 @@ import (
 	tf "github.com/glycerine/tmframe"
 	fsnotify "gopkg.in/fsnotify.v1"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -31,6 +32,19 @@ func main() {
 	err = cfg.ValidateConfig()
 	if err != nil {
 		usage(err, myflags)
+	}
+
+	if cfg.ZebraPackSchemaPath != "" {
+		by, err := ioutil.ReadFile(cfg.ZebraPackSchemaPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "tfcat error reading -zebrapack-schema file '%s': %v\n", cfg.ZebraPackSchemaPath, err)
+			os.Exit(1)
+		}
+		_, err = cfg.ZebraSchema.UnmarshalMsg(by)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "tfcat error Unmarshalling the -zebrapack-schema file '%s': %v\n", cfg.ZebraPackSchemaPath, err)
+			os.Exit(1)
+		}
 	}
 
 	leftover := myflags.Args()
@@ -97,7 +111,7 @@ nextfile:
 				fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame() at i=%v: '%v'\n", i, err)
 				os.Exit(1)
 			}
-			frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload, cfg.Rreadable)
+			frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload, cfg.Rreadable, &cfg.ZebraSchema)
 		}
 	}
 }
@@ -142,7 +156,7 @@ nextFrame:
 			fmt.Fprintf(os.Stderr, "tfcat error from fr.NextFrame(): '%v'\n", err)
 			os.Exit(1)
 		}
-		frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload, cfg.Rreadable)
+		frame.DisplayFrame(os.Stdout, i, cfg.PrettyPrint, cfg.SkipPayload, cfg.Rreadable, &cfg.ZebraSchema)
 		i++
 	}
 }

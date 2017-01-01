@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/glycerine/tmframe/testdata"
 )
 
 // generate n test Frames, with 4 different frame types, and randomly varying sizes
@@ -352,6 +354,50 @@ func GenTestTwo64Frames(n int, outpath *string) (frames []*Frame, tms []time.Tim
 		_, err = f.Write(by)
 		panicOn(err)
 		f.Close()
+	}
+
+	return
+}
+
+// generate n test Frames of ZebraPack encoded.
+// if outpath is non-nill, write to that file.
+func GenTestdataZebraPackTestFrames(n int, outpath *string) (frames []*Frame, tms []time.Time, by []byte) {
+
+	t0, err := time.Parse(time.RFC3339, "2016-02-16T00:00:00Z")
+	panicOn(err)
+	t0 = t0.UTC()
+
+	var f0 *Frame
+	for i := 0; i < n; i++ {
+
+		var e testdata.LogEntry
+		e.LogSequenceNum = int64(i)
+		e.Operation = fmt.Sprintf("0x%x", i)
+		data, err := e.MarshalMsg(nil)
+		panicOn(err)
+		t := t0.Add(time.Second * time.Duration(i))
+		tms = append(tms, t)
+		f0, err = NewFrame(t, EvZebraPack, 0, 0, data)
+		panicOn(err)
+
+		frames = append(frames, f0)
+		b0, err := f0.Marshal(nil)
+
+		panicOn(err)
+		by = append(by, b0...)
+	}
+
+	if outpath != nil {
+		if *outpath == "-" {
+			_, err = os.Stdout.Write(by)
+			panicOn(err)
+		} else {
+			f, err := os.Create(*outpath)
+			panicOn(err)
+			_, err = f.Write(by)
+			panicOn(err)
+			f.Close()
+		}
 	}
 
 	return

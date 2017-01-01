@@ -8,6 +8,9 @@ import (
 	"io"
 	"reflect"
 	"time"
+
+	"github.com/glycerine/zebrapack/msgp"
+	"github.com/glycerine/zebrapack/zebra"
 )
 
 // display and pretty print message payloads in json/msgpack format.
@@ -23,7 +26,7 @@ import (
 // If rReadable, then we print in a format that can be consumed
 // by R's read.table() call. The skipPayload, prettyPrint, and i values are ignored.
 //
-func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPayload bool, rReadable bool) {
+func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPayload bool, rReadable bool, zSchema *zebra.Schema) {
 
 	if rReadable {
 		frame.DisplayForR(w)
@@ -41,7 +44,8 @@ func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPay
 			pp := prettyPrintJson(prettyPrint, frame.Data)
 			fmt.Fprintf(w, "  %s", string(pp))
 		}
-		if evtnum == EvMsgpKafka || evtnum == EvMsgpack {
+		switch evtnum {
+		case EvMsgpKafka, EvMsgpack:
 			// decode msgpack to json with ugorji/go/codec
 
 			var iface interface{}
@@ -56,6 +60,16 @@ func (frame *Frame) DisplayFrame(w io.Writer, i int64, prettyPrint bool, skipPay
 			err = enc.Encode(&iface)
 			panicOn(err)
 			pp := prettyPrintJson(prettyPrint, wbuf.Bytes())
+			fmt.Fprintf(w, " %s", string(pp))
+		case EvZebraPack:
+			m2, _, err := zSchema.ZebraToMsgp2(frame.Data)
+			panicOn(err)
+			var json bytes.Buffer
+			_, err = msgp.CopyToJSON(&json, bytes.NewBuffer(m2))
+			panicOn(err)
+			by := json.Bytes()
+			//fmt.Printf("EvZebraPack: json by is '%s'\n", string(by))
+			pp := prettyPrintJson(prettyPrint, by)
 			fmt.Fprintf(w, " %s", string(pp))
 		}
 	}

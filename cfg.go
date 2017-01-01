@@ -3,17 +3,22 @@ package tm
 import (
 	"flag"
 	"fmt"
+
+	"github.com/glycerine/zebrapack/zebra"
 )
 
 // configure the tfcat command utility
 type TfcatConfig struct {
-	PrettyPrint bool
-	SkipPayload bool
-	Follow      bool
-	RawCount    int
-	RawSkip     int
-	ReadStdin   bool
-	Rreadable   bool
+	PrettyPrint         bool
+	SkipPayload         bool
+	Follow              bool
+	RawCount            int
+	RawSkip             int
+	ReadStdin           bool
+	Rreadable           bool
+	ZebraPackSchemaPath string
+
+	ZebraSchema zebra.Schema
 }
 
 // call DefineFlags before myflags.Parse()
@@ -25,10 +30,16 @@ func (c *TfcatConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Follow, "f", false, "follow the file, only printing any new additions.")
 	fs.BoolVar(&c.ReadStdin, "stdin", false, "read input from stdin rather than a file. tfcat cannot also -f follow stdin.")
 	fs.BoolVar(&c.Rreadable, "r", false, "display in R consumable format")
+	fs.StringVar(&c.ZebraPackSchemaPath, "-zebrapack-schema", "", "path to ZebraPack schema in msgpack2 format to read for decoding messages")
 }
 
 // call c.ValidateConfig() after myflags.Parse()
 func (c *TfcatConfig) ValidateConfig() error {
+	if c.ZebraPackSchemaPath != "" &&
+		!FileExists(c.ZebraPackSchemaPath) {
+		return fmt.Errorf("bad -zebrapack-schema path: "+
+			"'%s' does not exist.", c.ZebraPackSchemaPath)
+	}
 	return nil
 }
 
