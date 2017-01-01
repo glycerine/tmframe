@@ -30,7 +30,7 @@ func (c *TfcatConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Follow, "f", false, "follow the file, only printing any new additions.")
 	fs.BoolVar(&c.ReadStdin, "stdin", false, "read input from stdin rather than a file. tfcat cannot also -f follow stdin.")
 	fs.BoolVar(&c.Rreadable, "r", false, "display in R consumable format")
-	fs.StringVar(&c.ZebraPackSchemaPath, "-zebrapack-schema", "", "path to ZebraPack schema in msgpack2 format to read for decoding messages")
+	fs.StringVar(&c.ZebraPackSchemaPath, "zebrapack-schema", "", "path to ZebraPack schema in msgpack2 format to read for decoding messages")
 }
 
 // call c.ValidateConfig() after myflags.Parse()

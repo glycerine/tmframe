@@ -1,0 +1,58 @@
+{
+    "SourcePath": "logentry.go",
+    "SourcePackage": "testdata",
+    "ZebraSchemaId": 186188423177239,
+    "Structs": {
+        "LogEntry": {
+            "StructName": "LogEntry",
+            "Fields": [
+                {
+                    "Zid": 0,
+                    "FieldGoName": "LogSequenceNum",
+                    "FieldTagName": "lsn",
+                    "FieldTypeStr": "int64",
+                    "FieldCategory": 23,
+                    "FieldPrimitive": 17,
+                    "FieldFullType": {
+                        "Kind": 17,
+                        "Str": "int64"
+                    }
+                },
+                {
+                    "Zid": 1,
+                    "FieldGoName": "Operation",
+                    "FieldTagName": "op",
+                    "FieldTypeStr": "string",
+                    "FieldCategory": 23,
+                    "FieldPrimitive": 2,
+                    "FieldFullType": {
+                        "Kind": 2,
+                        "Str": "string"
+                    },
+                    "OmitEmpty": true
+                },
+                {
+                    "Zid": 2,
+                    "FieldGoName": "OpArgs",
+                    "FieldTagName": "args",
+                    "FieldTypeStr": "map[string]string",
+                    "FieldCategory": 24,
+                    "FieldFullType": {
+                        "Kind": 24,
+                        "Str": "Map",
+                        "Domain": {
+                            "Kind": 2,
+                            "Str": "string"
+                        },
+                        "Range": {
+                            "Kind": 2,
+                            "Str": "string"
+                        }
+                    },
+                    "OmitEmpty": true
+                }
+            ]
+        }
+    },
+    "Imports": []
+}
