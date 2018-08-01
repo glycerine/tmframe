@@ -2,7 +2,7 @@ package archiver
 
 import (
 	"fmt"
-	cv "github.com/glycerine/goconvey/convey"
+	cv "github.com/smartystreets/goconvey/convey"
 	ts "github.com/glycerine/tmframe"
 	"github.com/nats-io/gnatsd/server"
 	gnatsd "github.com/nats-io/gnatsd/test"

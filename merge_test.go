@@ -2,7 +2,7 @@ package tm
 
 import (
 	"fmt"
-	cv "github.com/glycerine/goconvey/convey"
+	cv "github.com/smartystreets/goconvey/convey"
 	"os"
 	"os/exec"
 	"testing"

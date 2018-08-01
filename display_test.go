@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	cv "github.com/glycerine/goconvey/convey"
+	cv "github.com/smartystreets/goconvey/convey"
 	"github.com/glycerine/tmframe/testdata"
 	"github.com/glycerine/zebrapack/zebra"
 )

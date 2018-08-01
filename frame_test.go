@@ -3,7 +3,7 @@ package tm
 import (
 	"bytes"
 	"fmt"
-	cv "github.com/glycerine/goconvey/convey"
+	cv "github.com/smartystreets/goconvey/convey"
 	"io"
 	"testing"
 	"time"
